@@ -25,7 +25,7 @@ jobs:
         run: python3 bloqueador_auto_mac/setup.py py2app
 
       - name: Upload .app as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: NoMore.app
           path: bloqueador_auto_mac/dist/NoMore.app
