@@ -1,8 +1,6 @@
 name: Build macOS .app
 
 on:
-  push:
-    branches: [ main ]  # o la rama que uses
   workflow_dispatch:
 
 jobs:
@@ -10,22 +8,31 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel py2app
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip3 install py2app
 
       - name: Build .app with py2app
-        run: python3 bloqueador_auto_mac/setup.py py2app
+        run: |
+          cd bloqueador_auto_mac
+          python3 setup.py py2app
 
-      - name: Upload .app as artifact
+      - name: Compress .app
+        run: |
+          cd bloqueador_auto_mac/dist
+          zip -r nomore_mac.zip nomore_mac.app
+
+      - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nomore_mac.app
-          path: bloqueador_auto_mac/dist/nomore_mac.app
+          name: nomore_mac_app
+          path: bloqueador_auto_mac/dist/nomore_mac.zip
