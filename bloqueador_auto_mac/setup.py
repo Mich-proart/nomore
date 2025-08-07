@@ -1,6 +1,7 @@
 from setuptools import setup
 
-APP = ['nomore_mac.py']
+APP = ['bloqueador_auto_mac/nomore_mac.py']
+
 OPTIONS = {
     'argv_emulation': True,
     'packages': ['tkinter'],
