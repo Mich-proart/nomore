@@ -1,11 +1,11 @@
 from setuptools import setup
 
-APP = ['bloqueador_auto_mac/nomore_mac.py']
+APP = ['nomore_mac.py']
 
 OPTIONS = {
     'argv_emulation': True,
     'packages': ['tkinter'],
-    #'iconfile': 'bloqueador_auto_mac/nomore.icns'  # Solo si tienes un icono .icns
+    'iconfile': 'nomore.icns'  # Solo si tienes un icono .icns
 }
 
 setup(
