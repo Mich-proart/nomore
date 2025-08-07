@@ -27,5 +27,5 @@ jobs:
       - name: Upload .app as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NoMore.app
-          path: bloqueador_auto_mac/dist/NoMore.app
+          name: nomore_mac_app.app
+          path: bloqueador_auto_mac/dist/nomore_mac_app.app
