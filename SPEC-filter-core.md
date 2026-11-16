@@ -6,9 +6,10 @@ Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-1
 
 Librería Rust que responde a una sola pregunta: **qué hacer con una consulta DNS**. Es la misma en Windows y en Android, de modo que el criterio de bloqueo es idéntico en todos los dispositivos.
 
-Recibe una consulta DNS en bruto y devuelve una de dos cosas:
+Recibe una consulta DNS en bruto y devuelve una de tres cosas:
 
-- una **respuesta ya fabricada** (bloqueo o redirección a SafeSearch), o
+- una **respuesta ya fabricada** (bloqueo),
+- la orden de **reescribirla** (SafeSearch): quien usa la librería resuelve el nombre seguro y ella monta la respuesta final, o
 - la orden de **reenviarla** al DNS de verdad.
 
 No abre sockets, no lee ficheros, no descarga listas y no sabe nada de guardianes ni contraseñas. Eso es trabajo de `windows-agent`, `android-app`, `blocklists` y `guard-core`.
@@ -81,6 +82,9 @@ La API pública es pequeña y sin genéricos ni referencias con tiempo de vida, 
 pub enum Action {
     /// Devolver estos bytes al cliente tal cual.
     Respond(Vec<u8>),
+    /// SafeSearch: resolver `upstream_query` fuera y pasar el resultado a
+    /// `finish_rewrite` junto con `token`.
+    Rewrite { upstream_query: Vec<u8>, token: RewriteToken },
     /// Reenviar la consulta original al DNS de salida.
     Forward,
 }
@@ -93,6 +97,10 @@ impl Filter {
 
     /// Nunca entra en pánico: una consulta ilegible se responde con FORMERR.
     pub fn handle_query(&self, query: &[u8]) -> Action;
+
+    /// Respuesta final de una redirección de SafeSearch. Si el DNS de salida
+    /// no dio una dirección utilizable, responde con bloqueo.
+    pub fn finish_rewrite(&self, token: RewriteToken, upstream_response: Option<&[u8]>) -> Vec<u8>;
 
     /// Para la interfaz y las pruebas: por qué se decide algo sobre un dominio.
     pub fn explain(&self, domain: &str) -> Verdict;

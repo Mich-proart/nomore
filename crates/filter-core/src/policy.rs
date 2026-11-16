@@ -4,6 +4,7 @@
 use crate::blocklist::{Category, CategoryList, SuffixSet};
 use crate::domain::DomainName;
 use crate::error::FilterError;
+use crate::safesearch;
 
 /// Dominios canario: responder NXDOMAIN hace que el navegador o el sistema
 /// desactive su DNS propio y vuelva a usar el del sistema, que es el nuestro.
@@ -52,6 +53,8 @@ pub enum Verdict {
     Blocked(Category),
     /// Dominio canario: se responde NXDOMAIN.
     Canary,
+    /// Buscador o YouTube: se redirige a este nombre, que fuerza el modo seguro.
+    SafeSearch(&'static str),
     /// El texto no es un nombre de dominio válido.
     Invalid,
 }
@@ -107,7 +110,10 @@ impl Filter {
     }
 
     /// Orden de precedencia: canario → vía de escape → permitido por el
-    /// guardián → categoría bloqueada → permitido.
+    /// guardián → categoría bloqueada → SafeSearch → permitido.
+    ///
+    /// SafeSearch va después de la lista de permitidos a propósito: permitir
+    /// un buscador no le quita el modo seguro.
     pub(crate) fn verdict(&self, name: &DomainName) -> Verdict {
         if self.canaries.contains(name) {
             return Verdict::Canary;
@@ -116,10 +122,12 @@ impl Filter {
             return Verdict::Blocked(Category::Bypass);
         }
         let blocked = self.lists.iter().find(|l| l.contains(name));
-        match blocked {
-            Some(_) if self.allowlist.contains(name) => Verdict::AllowedByGuardian,
-            Some(list) => Verdict::Blocked(list.category()),
-            None => Verdict::Allowed,
+        let allowed_by_guardian = blocked.is_some() && self.allowlist.contains(name);
+        match (blocked, safesearch::target_for(name.as_str())) {
+            (Some(list), _) if !allowed_by_guardian => Verdict::Blocked(list.category()),
+            (_, Some(target)) => Verdict::SafeSearch(target),
+            (Some(_), None) => Verdict::AllowedByGuardian,
+            (None, None) => Verdict::Allowed,
         }
     }
 }

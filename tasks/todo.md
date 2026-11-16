@@ -41,18 +41,18 @@ cargo test -p filter-core
 ### Punto de control A
 - [x] Comprobación común en verde.
 - [x] `explain` da el veredicto correcto para un ejemplo de cada fila de «Qué decide» salvo SafeSearch.
-- [ ] Revisión con Michell antes de seguir.
+- [x] Revisión con Michell antes de seguir.
 
 ## Fase 2: DNS
 
-- [ ] **Tarea 5: Consultas DNS y respuestas de bloqueo** (M)
+- [x] **Tarea 5: Consultas DNS y respuestas de bloqueo** (M)
   - `dns.rs`: `handle_query` lee la consulta y fabrica la respuesta: `0.0.0.0` para A, `::` para AAAA, vacía para HTTPS, SVCB y el resto, NXDOMAIN para canarios, FORMERR para bytes ilegibles, y `Forward` para lo permitido. TTL de 60 s.
   - Aceptación: la respuesta conserva el identificador y la pregunta de la consulta; cada tipo de la sección «Forma de un bloqueo» tiene su prueba sobre bytes reales.
   - Verificación: comprobación común.
   - Dependencias: 4.
   - Ficheros: `src/dns.rs`, `src/lib.rs`, `tests/dns.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 6: SafeSearch y YouTube restringido** (M)
+- [x] **Tarea 6: SafeSearch y YouTube restringido** (M)
   - `safesearch.rs`: tabla de redirecciones, variante `Action::Rewrite` y `Filter::finish_rewrite`.
   - Aceptación: `www.google.es` produce una consulta a `forcesafesearch.google.com` y la respuesta final lleva CNAME más direcciones; si la resolución externa falla, se responde con bloqueo; las consultas HTTPS a un buscador redirigido reciben respuesta vacía.
   - Verificación: comprobación común.
@@ -61,7 +61,7 @@ cargo test -p filter-core
 
 ### Punto de control B
 - [x] Comprobación común en verde.
-- [ ] Todas las filas de «Qué decide» tienen prueba (criterio de éxito 1).
+- [x] Todas las filas de «Qué decide» tienen prueba (criterio de éxito 1).
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 3: Garantías

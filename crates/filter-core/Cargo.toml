@@ -9,4 +9,5 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+hickory-proto = { version = "0.26.3", default-features = false }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }

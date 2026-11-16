@@ -50,7 +50,7 @@ fn unlisted_domains_are_allowed() {
     let f = filter(Policy::default());
     assert_eq!(f.explain("wikipedia.org"), Verdict::Allowed);
     assert_eq!(f.explain("notpornhub.com"), Verdict::Allowed);
-    assert_eq!(f.explain("google"), Verdict::Allowed);
+    assert_eq!(f.explain("maps.google.com"), Verdict::Allowed);
 }
 
 #[test]

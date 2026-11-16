@@ -40,4 +40,4 @@ domain ──→ blocklist ──→ policy ──→ dns ──→ safesearch (
 
 ## Fuera de este plan
 
-Listas reales, descarga y actualización (`blocklists`); sockets, reenvío y caché (`windows-agent`, `android-app`); enlace con Kotlin (`android-app`).
+Listas reales, descarga y actualización (`blocklists`), incluidas las variantes de buscadores que no admiten modo seguro forzado (`html.duckduckgo.com`, `lite.duckduckgo.com`), que irán en la lista de vías de escape; sockets, reenvío y caché (`windows-agent`, `android-app`); enlace con Kotlin (`android-app`).
