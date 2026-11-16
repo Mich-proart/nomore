@@ -1,6 +1,6 @@
 # Spec: `filter-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **pendiente de aprobación**.
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026**. Plan en [tasks/plan.md](tasks/plan.md).
 
 ## Objetivo
 
@@ -128,8 +128,8 @@ Orden de precedencia, de mayor a menor: canario → `bypass` → lista de permit
 4. Compila sin avisos para Windows y para las tres arquitecturas de Android.
 5. `cargo clippy -- -D warnings` y `cargo fmt --check` pasan.
 
-## Preguntas abiertas
+## Decisiones
 
-- **Loterías del Estado y la ONCE**: ¿cuentan como apuestas? Supuesto: sí, y el guardián puede permitirlas una a una.
-- **YouTube**: modo restringido estricto oculta bastante contenido normal (y los comentarios). Supuesto: estricto; la alternativa es el modo moderado.
-- **Redes sociales** (X, Reddit, Telegram web): tienen contenido adulto que el DNS no puede separar del resto. Supuesto: no se bloquean aquí; las cubrirá `screen-ai`. La alternativa es una categoría opcional `social` que las bloquee enteras.
+- **Loterías del Estado y la ONCE**: cuentan como apuestas; el guardián puede permitirlas una a una.
+- **YouTube**: modo restringido estricto.
+- **Redes sociales** (X, Reddit, Telegram web): no se bloquean en este módulo; las cubrirá `screen-ai`.
