@@ -1,0 +1,7 @@
+/target
+build/
+dist/
+__pycache__/
+*.pyc
+*.exe
+.DS_Store

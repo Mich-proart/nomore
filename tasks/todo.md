@@ -10,28 +10,28 @@ cargo test -p filter-core
 
 ## Fase 1: Base
 
-- [ ] **Tarea 1: Esqueleto del repositorio** (S)
+- [x] **Tarea 1: Esqueleto del repositorio** (S)
   - Mover el prototipo a `legacy/`, quitar `build/` y `dist/` de git, añadir `.gitignore`, crear el workspace de Cargo con `crates/filter-core` vacío y sustituir el workflow de macOS por uno de CI (formato, clippy y pruebas en Linux y Windows).
   - Aceptación: `cargo test -p filter-core` pasa con cero pruebas; no queda ningún `.exe` versionado; el CI corre en cada push.
   - Verificación: comprobación común; `git ls-files | grep -E '\.(exe|pyc|pyz)$'` no devuelve nada.
   - Dependencias: ninguna.
   - Ficheros: `Cargo.toml`, `.gitignore`, `.github/workflows/ci.yml`, `crates/filter-core/Cargo.toml`, `crates/filter-core/src/lib.rs`.
 
-- [ ] **Tarea 2: Normalización de dominios** (S)
+- [x] **Tarea 2: Normalización de dominios** (S)
   - `domain.rs`: minúsculas, sin punto final, validación de longitud y caracteres, e iterador de sufijos por etiquetas.
   - Aceptación: `WWW.Ejemplo.COM.` → `www.ejemplo.com`; los sufijos de `a.b.c` son `a.b.c`, `b.c`, `c`; nombres inválidos devuelven error, sin pánico.
   - Verificación: comprobación común.
   - Dependencias: 1.
   - Ficheros: `src/domain.rs`, `src/lib.rs`.
 
-- [ ] **Tarea 3: Formato de lista y búsqueda por sufijo** (M)
+- [x] **Tarea 3: Formato de lista y búsqueda por sufijo** (M)
   - `blocklist.rs`: `CategoryList::build` (dominios → binario) y `CategoryList::parse` (binario → tabla), con búsqueda por huella xxh3-64.
   - Aceptación: un dominio listado y cualquier subdominio suyo se encuentran; `notpornhub.com` no coincide con `pornhub.com`; un binario corrupto o de otra versión devuelve `FilterError`.
   - Verificación: comprobación común.
   - Dependencias: 2.
   - Ficheros: `src/blocklist.rs`, `src/lib.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 4: Política y veredicto** (M)
+- [x] **Tarea 4: Política y veredicto** (M)
   - `policy.rs`: categorías activas, lista de permitidos del guardián, canarios y el orden de precedencia de la especificación. Expone `Filter::new` y `Filter::explain`.
   - Aceptación: `porn` no se puede desactivar; la lista de permitidos desbloquea `gambling` pero nunca `bypass`; cada escalón de la precedencia tiene su prueba.
   - Verificación: comprobación común.
@@ -39,8 +39,8 @@ cargo test -p filter-core
   - Ficheros: `src/policy.rs`, `src/lib.rs`, `tests/policy.rs`.
 
 ### Punto de control A
-- [ ] Comprobación común en verde.
-- [ ] `explain` da el veredicto correcto para un ejemplo de cada fila de «Qué decide» salvo SafeSearch.
+- [x] Comprobación común en verde.
+- [x] `explain` da el veredicto correcto para un ejemplo de cada fila de «Qué decide» salvo SafeSearch.
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 2: DNS
@@ -60,7 +60,7 @@ cargo test -p filter-core
   - Ficheros: `src/safesearch.rs`, `src/dns.rs`, `src/lib.rs`, `tests/safesearch.rs`.
 
 ### Punto de control B
-- [ ] Comprobación común en verde.
+- [x] Comprobación común en verde.
 - [ ] Todas las filas de «Qué decide» tienen prueba (criterio de éxito 1).
 - [ ] Revisión con Michell antes de seguir.
 

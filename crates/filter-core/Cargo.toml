@@ -1,0 +1,12 @@
+[package]
+name = "filter-core"
+version = "0.1.0"
+description = "Núcleo de filtrado de NoMore: decide qué hacer con cada consulta DNS"
+edition.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
