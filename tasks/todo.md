@@ -10,37 +10,37 @@ cargo test --workspace
 
 ## Fase 1: Base
 
-- [ ] **Tarea 1: Crate y tiempo de confianza** (S)
+- [x] **Tarea 1: Crate y tiempo de confianza** (S)
   - Crear `crates/guard-core` y `clock.rs`: `TimePoint` y la hora de confianza que avanza con el servidor o con el reloj monótono.
   - Aceptación: adelantar el reloj del sistema no adelanta la hora de confianza y se detecta; tras un reinicio sin conexión la hora no avanza; con hora de servidor nunca retrocede.
   - Verificación: comprobación común.
   - Dependencias: ninguna.
   - Ficheros: `crates/guard-core/Cargo.toml`, `src/lib.rs`, `src/clock.rs`, `src/error.rs`.
 
-- [ ] **Tarea 2: Eventos, cadena y cola de salida** (M)
+- [x] **Tarea 2: Eventos, cadena y cola de salida** (M)
   - `event.rs`: tipos de evento, numeración, cadena SHA-256, cola con confirmación y contadores de desbordamiento.
   - Aceptación: una cadena íntegra verifica y una con un evento quitado o alterado no; `acknowledge` vacía la cola hasta el evento indicado; con la cola llena los accesos se cuentan y los de manipulación se conservan.
   - Verificación: comprobación común.
   - Dependencias: 1.
   - Ficheros: `src/event.rs`, `src/lib.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 3: Ajustes, acciones y `check`** (S)
+- [x] **Tarea 3: Ajustes, acciones y `check`** (S)
   - `mode.rs`: ajustes protegidos, modos, lista de acciones y la regla «endurecer es libre, aflojar exige autorización».
   - Aceptación: cada fila de «Qué exige autorización» tiene prueba; sin permiso, toda acción que afloja se deniega; endurecer se aplica y se anota.
   - Verificación: comprobación común.
   - Dependencias: 2.
   - Ficheros: `src/mode.rs`, `src/lib.rs`, `tests/actions.rs`.
 
-- [ ] **Tarea 4: Emparejar y autorizar con la clave del guardián** (M)
+- [x] **Tarea 4: Emparejar y autorizar con la clave del guardián** (M)
   - `secret.rs`: `setup`, huella Argon2id, código de recuperación, espera creciente entre fallos, permiso de un solo uso y `perform`.
-  - Aceptación: la clave correcta permite una sola acción, una sola vez; tres fallos generan aviso y la espera crece hasta 1 h; el código de recuperación permite cambiar la clave.
+  - Aceptación: la clave correcta permite una sola acción, una sola vez; tres fallos generan aviso y la espera crece hasta 1 h; el código de recuperación permite cambiar la clave; se admiten dos guardianes y nunca un tercero, cualquiera de los dos autoriza, y no se puede quitar al último.
   - Verificación: comprobación común.
   - Dependencias: 3.
-  - Ficheros: `src/secret.rs`, `src/mode.rs`, `src/lib.rs`, `tests/secret.rs`, `Cargo.toml` del crate.
+  - Ficheros: `src/secret.rs`, `src/guard.rs`, `src/lib.rs`, `tests/secret.rs`, `Cargo.toml` del crate.
 
 ### Punto de control A
-- [ ] Comprobación común en verde.
-- [ ] Escenario completo: emparejar, autorizar con clave «permitir un dominio», aplicarlo y ver los eventos en la cola.
+- [x] Comprobación común en verde.
+- [x] Escenario completo: emparejar, autorizar con clave «permitir un dominio», aplicarlo y ver los eventos en la cola.
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 2: Autorización y avisos

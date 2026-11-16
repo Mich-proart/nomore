@@ -15,6 +15,8 @@ Como `filter-core`, no abre sockets ni lee ficheros: quien la usa (`windows-agen
 ## Roles y modos
 
 - **Protegido**: quien usa el dispositivo. **Guardián**: quien tiene la clave y recibe los avisos.
+- **Uno o dos guardianes, nunca más.** Cada uno tiene su propia clave y su propio código de recuperación, y los dos tienen acceso total: cualquiera de ellos puede autorizar cualquier acción por sí solo, incluido añadir o quitar al otro. Siempre queda al menos uno.
+- Todos los avisos llegan a los dos, también cuando es el otro guardián quien autoriza algo.
 - El modo se elige al instalar y solo el guardián puede cambiarlo.
 
 | | Autocontrol | Parental |
@@ -33,7 +35,8 @@ Como `filter-core`, no abre sockets ni lee ficheros: quien la usa (`windows-agen
 | Cancelar una solicitud de desbloqueo | Permitido | — |
 | Permitir un dominio, desactivar apuestas o citas | Denegado | Permitido |
 | Pausar la protección (máximo 24 h, se reactiva sola) | Denegado | Permitido |
-| Desinstalar, cambiar de guardián o de modo | Denegado | Permitido |
+| Desinstalar, cambiar de modo | Denegado | Permitido |
+| Añadir el segundo guardián, quitar un guardián, cambiar una clave | Denegado | Permitido |
 
 Regla general: endurecer es libre, aflojar exige autorización.
 
@@ -41,7 +44,7 @@ Regla general: endurecer es libre, aflojar exige autorización.
 
 Tres vías, todas dejan evento y aviso al guardián:
 
-1. **Clave del guardián** escrita en el dispositivo. Efecto inmediato. Funciona sin conexión.
+1. **Clave de un guardián** escrita en el dispositivo. Efecto inmediato (el permiso dura 10 min). Funciona sin conexión.
 2. **Aprobación a distancia**: el protegido pide, el guardián aprueba desde el aviso que recibe. Llega con `guardian-link`; aquí solo se define y se verifica la aprobación firmada.
 3. **Espera** (solo autocontrol): el protegido pide, el guardián recibe aviso al instante, y pasada la espera la acción queda permitida durante 1 h. Cualquiera puede cancelarla antes.
 
@@ -50,7 +53,7 @@ Detalles:
 - Espera por defecto: **72 h**. El protegido puede alargarla; acortarla exige autorización.
 - Una autorización vale para una sola acción concreta, no es un «modo desbloqueado».
 - Clave errónea: espera creciente entre intentos (1 s, 2 s, 4 s… hasta 1 h) y aviso al guardián al tercer fallo.
-- **Clave perdida**: al emparejar se genera un código de recuperación para el guardián. Sin clave ni código, en autocontrol queda la vía de la espera; en parental, reinstalar el dispositivo.
+- **Clave perdida**: cada guardián recibe un código de recuperación al darse de alta, que sirve una vez para cambiar su clave. Si hay dos guardianes, el otro también puede cambiársela. Sin clave ni código, en autocontrol queda la vía de la espera; en parental, reinstalar el dispositivo.
 
 ### El reloj
 
@@ -113,7 +116,8 @@ Formato:   cargo fmt --all -- --check
 ```
 crates/guard-core/
   src/lib.rs          → API pública
-  src/mode.rs         → modos, acciones y qué exige autorización
+  src/guard.rs        → la máquina de estados que une todo lo demás
+  src/mode.rs         → modos, ajustes protegidos, acciones y qué exige autorización
   src/secret.rs       → clave del guardián, código de recuperación, espera entre fallos
   src/unlock.rs       → solicitudes de desbloqueo y su máquina de estados
   src/clock.rs        → tiempo de confianza a partir de reloj del sistema, monótono y servidor
@@ -168,7 +172,7 @@ impl Guard {
 
 - **Siempre**: toda acción que afloja pasa por `check`; todo cambio de estado genera evento; fallo cerrado.
 - **Preguntar antes**: dependencias nuevas, formato del estado guardado, formato de los eventos (es el contrato con `guardian-link`).
-- **Nunca**: modo oculto; registrar o enviar dominios permitidos; guardar la clave del guardián en claro; una puerta trasera o clave maestra.
+- **Nunca**: más de dos guardianes; modo oculto; registrar o enviar dominios permitidos; guardar la clave del guardián en claro; una puerta trasera o clave maestra.
 
 ## Criterios de éxito
 
@@ -181,6 +185,7 @@ impl Guard {
 
 ## Decisiones
 
+- **Guardianes**: dos como máximo, los dos con acceso total.
 - **Canal de los avisos**: de momento solo correo. WhatsApp y SMS quedan para más adelante.
 - **Intentos de acceso**: pornografía al instante (agrupando 15 min por sitio); apuestas y citas en el resumen diario.
 - **Espera en autocontrol**: 72 h.

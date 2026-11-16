@@ -58,3 +58,4 @@ Fuera de este mapa por ahora: macOS, Linux, iOS.
 - **Visibilidad del código**: indiferente. Se escribe como si fuera público: ningún secreto ni clave de firma en el repositorio.
 - **Avisos al guardián** (revisión 2): el guardián recibe aviso de los intentos de acceso a sitios bloqueados y de cualquier intento de manipulación. Por eso `guardian-link` pasa a construirse antes que los agentes.
 - **Transparencia**: NoMore nunca funciona oculto. El protegido ve siempre que está instalado, quién es su guardián y qué se le comunica. Solo se comunican intentos sobre categorías bloqueadas, nunca la navegación permitida.
+- **Guardianes**: uno o dos por dispositivo, nunca más, y los dos con acceso total.

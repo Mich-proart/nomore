@@ -1,6 +1,6 @@
 # Plan de implementación: `guard-core`
 
-Especificación: [SPEC-guard-core.md](../SPEC-guard-core.md). Tareas: [todo.md](todo.md). Estado: **pendiente de aprobación**.
+Especificación: [SPEC-guard-core.md](../SPEC-guard-core.md). Tareas: [todo.md](todo.md). Estado: **aprobado el 16-11-2026**.
 
 ## Resumen
 
@@ -8,7 +8,7 @@ Librería Rust con las reglas del anti-manipulación: qué exige autorización, 
 
 ## Decisiones de arquitectura
 
-1. **Tiempo de confianza.** Cada llamada recibe un `TimePoint` con el reloj del sistema, el reloj monótono y, si la hay, la hora del servidor. La librería mantiene su propia hora:
+1. **Tiempo de confianza.** Cada llamada recibe un `TimePoint` con el reloj del sistema, el reloj monótono, un identificador de arranque y, si la hay, la hora del servidor. La librería mantiene su propia hora:
    - con hora de servidor, manda esa (y nunca retrocede);
    - sin ella, avanza lo que avance el reloj monótono;
    - tras un reinicio sin conexión no avanza: el tiempo apagado no cuenta.
@@ -19,7 +19,9 @@ Librería Rust con las reglas del anti-manipulación: qué exige autorización, 
 
 3. **Autorizaciones de un solo uso.** Autorizar produce un permiso para una acción concreta, con caducidad. `perform` lo consume, aplica el cambio y anota el evento.
 
-4. **Clave del guardián.** Se guarda su huella Argon2id (19 MiB, 2 pasadas), nunca la clave. El código de recuperación se genera al emparejar y se guarda igual. La librería no genera azar: el agente le pasa los bytes aleatorios.
+4. **Uno o dos guardianes.** Cada uno con su clave y su código de recuperación; cualquiera autoriza cualquier acción. Al escribir una clave se comprueba contra los dos, y los fallos se cuentan en común. Cada evento de autorización dice qué guardián fue.
+
+   **Clave del guardián.** Se guarda su huella Argon2id (19 MiB, 2 pasadas), nunca la clave. El código de recuperación se genera al emparejar y se guarda igual. La librería no genera azar: el agente le pasa los bytes aleatorios.
 
 5. **Aprobación a distancia.** El servidor firma con Ed25519 «apruebo la solicitud N del dispositivo D para la acción A, válido hasta T». La clave pública del servidor se fija al emparejar. Cada número de solicitud sirve una sola vez.
 
