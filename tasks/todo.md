@@ -89,4 +89,4 @@ cargo test -p filter-core
 
 ### Punto de control final
 - [x] Los cinco criterios de éxito de la especificación se cumplen.
-- [ ] Revisión con Michell y fusión en `development`.
+- [x] Revisión con Michell y fusión en `development`.
