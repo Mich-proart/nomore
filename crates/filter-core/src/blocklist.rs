@@ -147,10 +147,8 @@ impl CategoryList {
         }
 
         let mut hashes = Vec::with_capacity(body.len() / 8);
-        for chunk in body.chunks_exact(8) {
-            let mut raw = [0u8; 8];
-            raw.copy_from_slice(chunk);
-            let hash = u64::from_le_bytes(raw);
+        for raw in body.as_chunks::<8>().0 {
+            let hash = u64::from_le_bytes(*raw);
             if hashes.last().is_some_and(|&previous| previous >= hash) {
                 return Err(FilterError::CorruptList("huellas desordenadas o repetidas"));
             }
