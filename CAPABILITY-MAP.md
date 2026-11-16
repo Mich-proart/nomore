@@ -1,6 +1,6 @@
 # Mapa de capacidades: NoMore
 
-Estado: **aprobado el 16-11-2026; revisión 2 (avisos al guardián) pendiente de aprobación**. Cada módulo tiene su especificación en `SPEC-<id>.md`.
+Estado: **aprobado el 16-11-2026** (revisión 2, con avisos al guardián). Cada módulo tiene su especificación en `SPEC-<id>.md`.
 
 ## Objetivo
 
@@ -28,7 +28,7 @@ La diferencia entre los dos casos es solo de configuración:
 | `filter-core` | Decide si un dominio se bloquea: listas, subdominios, SafeSearch forzado, bloqueo de DoH, VPN y proxies conocidos. Librería Rust compartida por todas las plataformas | — |
 | `guard-core` | Anti-manipulación común: roles, clave del guardián, solicitudes de desbloqueo con espera, registro de eventos (intentos de acceso y de manipulación) y cola de avisos. Librería Rust | — |
 | `blocklists` | Genera y publica las listas de dominios (firmadas y versionadas) y define cómo se actualizan los clientes | `filter-core` |
-| `guardian-link` | Servidor: recibe los eventos de los dispositivos y avisa al guardián (correo primero; WhatsApp, SMS o notificación en el móvil después), detecta dispositivos que dejan de dar señal y permite aprobar desbloqueos a distancia | `guard-core` |
+| `guardian-link` | Servidor: recibe los eventos de los dispositivos y avisa al guardián por correo (WhatsApp, SMS o notificación en el móvil, más adelante), detecta dispositivos que dejan de dar señal y permite aprobar desbloqueos a distancia | `guard-core` |
 | `windows-agent` | Servicio de Windows (SYSTEM): proxy DNS local, DNS forzado en todos los adaptadores, DoH de navegadores desactivado por política, autorreparación, protección contra desinstalación y envío de eventos | `filter-core`, `guard-core`, `blocklists`, `guardian-link` |
 | `windows-ui` | Interfaz (Tauri): instalación, emparejar guardián, estado, pedir desbloqueo | `windows-agent` |
 | `android-app` | App Kotlin: VPN local con filtrado DNS, administrador de dispositivo contra desinstalación, envío de eventos, interfaz propia | `filter-core`, `guard-core`, `blocklists`, `guardian-link` |

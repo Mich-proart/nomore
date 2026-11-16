@@ -1,6 +1,6 @@
 # Spec: `guard-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **pendiente de aprobación**.
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026**. Plan en [tasks/plan.md](tasks/plan.md).
 
 ## Objetivo
 
@@ -179,9 +179,9 @@ impl Guard {
 5. Comprobar la clave del guardián tarda entre 0,1 y 1 s en un móvil de gama media (Argon2id ajustado), y un registro alterado no verifica.
 6. Compila sin avisos para Windows y las tres arquitecturas de Android; clippy y formato en verde.
 
-## Preguntas abiertas
+## Decisiones
 
-- **Canal de los avisos**. Supuesto: correo en la primera versión; WhatsApp y SMS después, porque tienen coste por mensaje y WhatsApp exige cuenta de empresa y plantillas aprobadas por Meta. No afecta a este módulo, sí al orden de trabajo en `guardian-link`.
-- **Intentos de acceso**. Supuesto: pornografía al instante (agrupando 15 min por sitio), apuestas y citas en el resumen diario.
-- **Espera en autocontrol**. Supuesto: 72 h.
-- **Contenido del aviso**. Supuesto: incluye el nombre del sitio, no solo la categoría.
+- **Canal de los avisos**: de momento solo correo. WhatsApp y SMS quedan para más adelante.
+- **Intentos de acceso**: pornografía al instante (agrupando 15 min por sitio); apuestas y citas en el resumen diario.
+- **Espera en autocontrol**: 72 h.
+- **Contenido del aviso**: incluye el nombre del sitio.

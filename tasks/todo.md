@@ -1,92 +1,106 @@
-# Tareas: `filter-core`
+# Tareas: `guard-core`
 
 Plan: [plan.md](plan.md). Comprobación común a todas las tareas:
 
 ```
 cargo fmt --all -- --check
-cargo clippy -p filter-core --all-targets -- -D warnings
-cargo test -p filter-core
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
 
 ## Fase 1: Base
 
-- [x] **Tarea 1: Esqueleto del repositorio** (S)
-  - Mover el prototipo a `legacy/`, quitar `build/` y `dist/` de git, añadir `.gitignore`, crear el workspace de Cargo con `crates/filter-core` vacío y sustituir el workflow de macOS por uno de CI (formato, clippy y pruebas en Linux y Windows).
-  - Aceptación: `cargo test -p filter-core` pasa con cero pruebas; no queda ningún `.exe` versionado; el CI corre en cada push.
-  - Verificación: comprobación común; `git ls-files | grep -E '\.(exe|pyc|pyz)$'` no devuelve nada.
+- [ ] **Tarea 1: Crate y tiempo de confianza** (S)
+  - Crear `crates/guard-core` y `clock.rs`: `TimePoint` y la hora de confianza que avanza con el servidor o con el reloj monótono.
+  - Aceptación: adelantar el reloj del sistema no adelanta la hora de confianza y se detecta; tras un reinicio sin conexión la hora no avanza; con hora de servidor nunca retrocede.
+  - Verificación: comprobación común.
   - Dependencias: ninguna.
-  - Ficheros: `Cargo.toml`, `.gitignore`, `.github/workflows/ci.yml`, `crates/filter-core/Cargo.toml`, `crates/filter-core/src/lib.rs`.
+  - Ficheros: `crates/guard-core/Cargo.toml`, `src/lib.rs`, `src/clock.rs`, `src/error.rs`.
 
-- [x] **Tarea 2: Normalización de dominios** (S)
-  - `domain.rs`: minúsculas, sin punto final, validación de longitud y caracteres, e iterador de sufijos por etiquetas.
-  - Aceptación: `WWW.Ejemplo.COM.` → `www.ejemplo.com`; los sufijos de `a.b.c` son `a.b.c`, `b.c`, `c`; nombres inválidos devuelven error, sin pánico.
+- [ ] **Tarea 2: Eventos, cadena y cola de salida** (M)
+  - `event.rs`: tipos de evento, numeración, cadena SHA-256, cola con confirmación y contadores de desbordamiento.
+  - Aceptación: una cadena íntegra verifica y una con un evento quitado o alterado no; `acknowledge` vacía la cola hasta el evento indicado; con la cola llena los accesos se cuentan y los de manipulación se conservan.
   - Verificación: comprobación común.
   - Dependencias: 1.
-  - Ficheros: `src/domain.rs`, `src/lib.rs`.
+  - Ficheros: `src/event.rs`, `src/lib.rs`, `Cargo.toml` del crate.
 
-- [x] **Tarea 3: Formato de lista y búsqueda por sufijo** (M)
-  - `blocklist.rs`: `CategoryList::build` (dominios → binario) y `CategoryList::parse` (binario → tabla), con búsqueda por huella xxh3-64.
-  - Aceptación: un dominio listado y cualquier subdominio suyo se encuentran; `notpornhub.com` no coincide con `pornhub.com`; un binario corrupto o de otra versión devuelve `FilterError`.
+- [ ] **Tarea 3: Ajustes, acciones y `check`** (S)
+  - `mode.rs`: ajustes protegidos, modos, lista de acciones y la regla «endurecer es libre, aflojar exige autorización».
+  - Aceptación: cada fila de «Qué exige autorización» tiene prueba; sin permiso, toda acción que afloja se deniega; endurecer se aplica y se anota.
   - Verificación: comprobación común.
   - Dependencias: 2.
-  - Ficheros: `src/blocklist.rs`, `src/lib.rs`, `Cargo.toml` del crate.
+  - Ficheros: `src/mode.rs`, `src/lib.rs`, `tests/actions.rs`.
 
-- [x] **Tarea 4: Política y veredicto** (M)
-  - `policy.rs`: categorías activas, lista de permitidos del guardián, canarios y el orden de precedencia de la especificación. Expone `Filter::new` y `Filter::explain`.
-  - Aceptación: `porn` no se puede desactivar; la lista de permitidos desbloquea `gambling` pero nunca `bypass`; cada escalón de la precedencia tiene su prueba.
+- [ ] **Tarea 4: Emparejar y autorizar con la clave del guardián** (M)
+  - `secret.rs`: `setup`, huella Argon2id, código de recuperación, espera creciente entre fallos, permiso de un solo uso y `perform`.
+  - Aceptación: la clave correcta permite una sola acción, una sola vez; tres fallos generan aviso y la espera crece hasta 1 h; el código de recuperación permite cambiar la clave.
   - Verificación: comprobación común.
   - Dependencias: 3.
-  - Ficheros: `src/policy.rs`, `src/lib.rs`, `tests/policy.rs`.
+  - Ficheros: `src/secret.rs`, `src/mode.rs`, `src/lib.rs`, `tests/secret.rs`, `Cargo.toml` del crate.
 
 ### Punto de control A
-- [x] Comprobación común en verde.
-- [x] `explain` da el veredicto correcto para un ejemplo de cada fila de «Qué decide» salvo SafeSearch.
-- [x] Revisión con Michell antes de seguir.
+- [ ] Comprobación común en verde.
+- [ ] Escenario completo: emparejar, autorizar con clave «permitir un dominio», aplicarlo y ver los eventos en la cola.
+- [ ] Revisión con Michell antes de seguir.
 
-## Fase 2: DNS
+## Fase 2: Autorización y avisos
 
-- [x] **Tarea 5: Consultas DNS y respuestas de bloqueo** (M)
-  - `dns.rs`: `handle_query` lee la consulta y fabrica la respuesta: `0.0.0.0` para A, `::` para AAAA, vacía para HTTPS, SVCB y el resto, NXDOMAIN para canarios, FORMERR para bytes ilegibles, y `Forward` para lo permitido. TTL de 60 s.
-  - Aceptación: la respuesta conserva el identificador y la pregunta de la consulta; cada tipo de la sección «Forma de un bloqueo» tiene su prueba sobre bytes reales.
+- [ ] **Tarea 5: Desbloqueo con espera y pausa** (M)
+  - `unlock.rs`: solicitud, cancelación, vencimiento en hora de confianza, ventana de 1 h, denegación en modo parental, pausa de 24 h como máximo que se reanuda sola, y `tick`.
+  - Aceptación: en autocontrol la acción queda permitida a las 72 h y deja de estarlo 1 h después; en parental se deniega; alargar la espera es libre y acortarla exige autorización; adelantar el reloj no la acorta.
   - Verificación: comprobación común.
   - Dependencias: 4.
-  - Ficheros: `src/dns.rs`, `src/lib.rs`, `tests/dns.rs`, `Cargo.toml` del crate.
+  - Ficheros: `src/unlock.rs`, `src/mode.rs`, `src/lib.rs`, `tests/unlock.rs`.
 
-- [x] **Tarea 6: SafeSearch y YouTube restringido** (M)
-  - `safesearch.rs`: tabla de redirecciones, variante `Action::Rewrite` y `Filter::finish_rewrite`.
-  - Aceptación: `www.google.es` produce una consulta a `forcesafesearch.google.com` y la respuesta final lleva CNAME más direcciones; si la resolución externa falla, se responde con bloqueo; las consultas HTTPS a un buscador redirigido reciben respuesta vacía.
+- [ ] **Tarea 6: Aprobación a distancia firmada** (S)
+  - Verificar aprobaciones Ed25519 ligadas a dispositivo, solicitud, acción y caducidad.
+  - Aceptación: una aprobación válida concede el permiso; se rechazan las de firma incorrecta, otra solicitud, otra acción, caducadas o ya usadas.
   - Verificación: comprobación común.
   - Dependencias: 5.
-  - Ficheros: `src/safesearch.rs`, `src/dns.rs`, `src/lib.rs`, `tests/safesearch.rs`.
+  - Ficheros: `src/approval.rs`, `src/lib.rs`, `tests/approval.rs`, `Cargo.toml` del crate.
+
+- [ ] **Tarea 7: Intentos de acceso, urgencia y señal de vida** (M)
+  - `notify.rs`: agrupación de 15 min por sitio, evento de repetidos, urgencia de cada evento y señal de vida cada 15 min desde `tick`.
+  - Aceptación: 40 intentos al mismo sitio en un minuto dan un evento inmediato y, al cerrar la ventana, uno de «39 más»; pornografía es inmediata y apuestas y citas van a resumen; toda manipulación es inmediata.
+  - Verificación: comprobación común.
+  - Dependencias: 2 y 3.
+  - Ficheros: `src/notify.rs`, `src/event.rs`, `src/lib.rs`, `tests/notify.rs`.
 
 ### Punto de control B
-- [x] Comprobación común en verde.
-- [x] Todas las filas de «Qué decide» tienen prueba (criterio de éxito 1).
-- [x] Revisión con Michell antes de seguir.
+- [ ] Comprobación común en verde.
+- [ ] Cada fila de «Qué exige autorización» y de «Avisos» tiene prueba (criterio 1).
+- [ ] Revisión con Michell antes de seguir.
 
 ## Fase 3: Garantías
 
-- [x] **Tarea 7: Pruebas de propiedades** (S)
-  - `proptest` para las tres propiedades de la especificación y una prueba larga de 10 millones de entradas aleatorias.
-  - Aceptación: ningún pánico en 10 millones de entradas (criterio 3).
-  - Verificación: `cargo test -p filter-core --release -- --ignored fuzz_10m`.
-  - Dependencias: 6.
+- [ ] **Tarea 8: Estado autenticado y fallo cerrado** (M)
+  - `state.rs`: `save` y `load` con versión y HMAC; arranque sin emparejar si falta, está corrupto o es de otro dispositivo.
+  - Aceptación: guardar y cargar conserva todo (ajustes, solicitudes, hora de confianza, cola); cualquier byte alterado u otra clave de dispositivo dan arranque cerrado con evento de manipulación (criterio 4).
+  - Verificación: comprobación común.
+  - Dependencias: 5, 6 y 7.
+  - Ficheros: `src/state.rs`, `src/lib.rs`, `tests/state.rs`, `Cargo.toml` del crate.
+
+- [ ] **Tarea 9: Pruebas de propiedades** (M)
+  - Secuencias aleatorias de órdenes y saltos de reloj; bytes aleatorios en `load` y en aprobaciones.
+  - Aceptación: en 100 000 secuencias sin clave, sin aprobación válida y sin que venza la espera, los ajustes nunca se aflojan (criterio 2); el reloj del sistema nunca acorta una espera (criterio 3); ningún pánico.
+  - Verificación: `cargo test -p guard-core --release -- --ignored`.
+  - Dependencias: 8.
   - Ficheros: `tests/properties.rs`, `Cargo.toml` del crate.
 
-- [x] **Tarea 8: Rendimiento y memoria** (S)
-  - Banco de pruebas con una lista sintética de un millón de dominios.
-  - Aceptación: construir el filtro en menos de 1 s, menos de 32 MB y menos de 20 µs de media por consulta (criterio 2).
-  - Verificación: `cargo test -p filter-core --release -- --ignored one_million` (umbrales) y `cargo bench -p filter-core` (cifras).
-  - Dependencias: 6.
-  - Ficheros: `benches/filter.rs`, `Cargo.toml` del crate.
+- [ ] **Tarea 10: `filter-core` devuelve la regla que coincidió** (S)
+  - Nueva función pública `Filter::blocked_rule(domain)` que devuelve la categoría y la entrada de la lista (`pornhub.com` para `cdn.es.pornhub.com`), para usarla como clave de agrupación.
+  - Aceptación: devuelve la entrada exacta de la lista; `None` si el dominio no está bloqueado; no cambia ningún comportamiento existente.
+  - Verificación: comprobación común.
+  - Dependencias: ninguna.
+  - Ficheros: `crates/filter-core/src/blocklist.rs`, `src/policy.rs`, `tests/policy.rs`, `SPEC-filter-core.md`.
 
-- [x] **Tarea 9: Compilación para Windows y Android** (S)
-  - Añadir al CI `cargo check` para `x86_64-pc-windows-msvc` y las tres arquitecturas de Android.
-  - Aceptación: los cuatro destinos compilan sin avisos (criterio 4).
+- [ ] **Tarea 11: CI y medición de Argon2id** (S)
+  - Extender los trabajos de garantías y destinos a todo el workspace; prueba que mide la comprobación de clave.
+  - Aceptación: los cuatro destinos compilan sin avisos con los dos crates (criterio 6); la comprobación de clave tarda menos de 1 s en CI (criterio 5, parte medible aquí).
   - Verificación: el CI pasa en la rama.
-  - Dependencias: 6.
-  - Ficheros: `.github/workflows/ci.yml`.
+  - Dependencias: 9.
+  - Ficheros: `.github/workflows/ci.yml`, `tests/guarantees.rs`.
 
 ### Punto de control final
-- [x] Los cinco criterios de éxito de la especificación se cumplen.
-- [x] Revisión con Michell y fusión en `development`.
+- [ ] Los seis criterios de éxito de la especificación se cumplen.
+- [ ] Revisión con Michell y fusión en `development`.

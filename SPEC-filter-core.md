@@ -1,6 +1,6 @@
 # Spec: `filter-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/plan.md](tasks/plan.md).
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/archive/filter-core-plan.md](tasks/archive/filter-core-plan.md).
 
 ## Objetivo
 
