@@ -1,6 +1,6 @@
 # Spec: `filter-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026**. Plan en [tasks/plan.md](tasks/plan.md).
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/plan.md](tasks/plan.md).
 
 ## Objetivo
 
@@ -50,11 +50,12 @@ No abre sockets, no lee ficheros, no descarga listas y no sabe nada de guardiane
 ## Comandos
 
 ```
-Compilar:   cargo build -p filter-core
-Probar:     cargo test -p filter-core
-Lint:       cargo clippy -p filter-core --all-targets -- -D warnings
-Formato:    cargo fmt --all -- --check
-Rendimiento: cargo bench -p filter-core
+Compilar:     cargo build -p filter-core
+Probar:       cargo test -p filter-core
+Garantías:    cargo test -p filter-core --release -- --ignored --nocapture
+Lint:         cargo clippy -p filter-core --all-targets -- -D warnings
+Formato:      cargo fmt --all -- --check
+Rendimiento:  cargo bench -p filter-core
 ```
 
 ## Estructura
@@ -135,6 +136,17 @@ Orden de precedencia, de mayor a menor: canario → `bypass` → lista de permit
 3. 10 millones de entradas aleatorias en `handle_query` sin un solo pánico.
 4. Compila sin avisos para Windows y para las tres arquitecturas de Android.
 5. `cargo clippy -- -D warnings` y `cargo fmt --check` pasan.
+
+## Resultados medidos
+
+Con una lista de un millón de dominios, en Linux x86-64 (16-11-2026):
+
+| Criterio | Objetivo | Medido |
+|---|---|---|
+| Construir el filtro | < 1 s | 4 ms |
+| Memoria del filtro | < 32 MB | 7,6 MB |
+| Tiempo medio por consulta | < 20 µs | 1,1 µs |
+| Entradas aleatorias sin pánico | 10 millones | 10 millones |
 
 ## Decisiones
 

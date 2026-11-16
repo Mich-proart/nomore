@@ -8,6 +8,18 @@ repository.workspace = true
 [lints]
 workspace = true
 
+[lib]
+# El rendimiento se mide con criterion en benches/, no con el arnés de libtest.
+bench = false
+
 [dependencies]
 hickory-proto = { version = "0.26.3", default-features = false, features = ["std"] }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+[dev-dependencies]
+criterion = "0.8.2"
+proptest = "1.12.0"
+
+[[bench]]
+name = "filter"
+harness = false

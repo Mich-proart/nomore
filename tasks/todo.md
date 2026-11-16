@@ -62,25 +62,25 @@ cargo test -p filter-core
 ### Punto de control B
 - [x] Comprobación común en verde.
 - [x] Todas las filas de «Qué decide» tienen prueba (criterio de éxito 1).
-- [ ] Revisión con Michell antes de seguir.
+- [x] Revisión con Michell antes de seguir.
 
 ## Fase 3: Garantías
 
-- [ ] **Tarea 7: Pruebas de propiedades** (S)
+- [x] **Tarea 7: Pruebas de propiedades** (S)
   - `proptest` para las tres propiedades de la especificación y una prueba larga de 10 millones de entradas aleatorias.
   - Aceptación: ningún pánico en 10 millones de entradas (criterio 3).
   - Verificación: `cargo test -p filter-core --release -- --ignored fuzz_10m`.
   - Dependencias: 6.
   - Ficheros: `tests/properties.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 8: Rendimiento y memoria** (S)
+- [x] **Tarea 8: Rendimiento y memoria** (S)
   - Banco de pruebas con una lista sintética de un millón de dominios.
   - Aceptación: construir el filtro en menos de 1 s, menos de 32 MB y menos de 20 µs de media por consulta (criterio 2).
-  - Verificación: `cargo bench -p filter-core`.
+  - Verificación: `cargo test -p filter-core --release -- --ignored one_million` (umbrales) y `cargo bench -p filter-core` (cifras).
   - Dependencias: 6.
   - Ficheros: `benches/filter.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 9: Compilación para Windows y Android** (S)
+- [x] **Tarea 9: Compilación para Windows y Android** (S)
   - Añadir al CI `cargo check` para `x86_64-pc-windows-msvc` y las tres arquitecturas de Android.
   - Aceptación: los cuatro destinos compilan sin avisos (criterio 4).
   - Verificación: el CI pasa en la rama.
@@ -88,5 +88,5 @@ cargo test -p filter-core
   - Ficheros: `.github/workflows/ci.yml`.
 
 ### Punto de control final
-- [ ] Los cinco criterios de éxito de la especificación se cumplen.
+- [x] Los cinco criterios de éxito de la especificación se cumplen.
 - [ ] Revisión con Michell y fusión en `development`.

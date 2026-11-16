@@ -22,3 +22,36 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Pruebas
         run: cargo test --workspace
+
+  garantias:
+    name: Garantías (10M de consultas, 1M de dominios)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Pruebas largas
+        run: cargo test -p filter-core --release -- --ignored --nocapture
+
+  destinos:
+    name: Compila para ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+          - aarch64-linux-android
+          - armv7-linux-androideabi
+          - x86_64-linux-android
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Comprobar
+        run: cargo check -p filter-core --target ${{ matrix.target }}
