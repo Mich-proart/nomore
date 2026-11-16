@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2021"
+repository = "https://github.com/Mich-proart/nomore"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
