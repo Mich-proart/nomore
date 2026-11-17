@@ -30,6 +30,14 @@ pub enum GuardError {
     LastGuardian,
     /// No existe ese guardián.
     UnknownGuardian,
+    /// Hay demasiadas solicitudes de desbloqueo pendientes.
+    TooManyRequests,
+    /// No hay ninguna solicitud pendiente con ese número.
+    UnknownRequest,
+    /// Aún no hay servidor vinculado: no se aceptan aprobaciones a distancia.
+    NoServerLinked,
+    /// La aprobación a distancia no es válida.
+    InvalidApproval(&'static str),
 }
 
 impl fmt::Display for GuardError {
@@ -51,6 +59,10 @@ impl fmt::Display for GuardError {
             Self::TooManyGuardians => write!(f, "ya hay dos guardianes"),
             Self::LastGuardian => write!(f, "no se puede quitar al único guardián"),
             Self::UnknownGuardian => write!(f, "no existe ese guardián"),
+            Self::TooManyRequests => write!(f, "demasiadas solicitudes pendientes"),
+            Self::UnknownRequest => write!(f, "no existe esa solicitud"),
+            Self::NoServerLinked => write!(f, "no hay servidor vinculado"),
+            Self::InvalidApproval(why) => write!(f, "aprobación no válida: {why}"),
         }
     }
 }

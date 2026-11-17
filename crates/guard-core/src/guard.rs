@@ -3,18 +3,24 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::approval::{parse_server_key, signature_is_valid, Approval};
 use crate::clock::{TimePoint, TrustedClock};
 use crate::error::GuardError;
-use crate::event::{Authorizer, Category, Envelope, EventId, EventKind, EventLog, Tamper};
+use crate::event::{to_hex, Authorizer, Category, Envelope, EventId, EventKind, EventLog, Tamper};
 use crate::mode::{normalize_domain, Action, Mode, Settings, Tightening};
-use crate::notify::urgency_of;
+use crate::notify::{urgency_of, AccessWindows, Heartbeat};
 use crate::secret::{
     Failures, GuardianId, GuardianInfo, GuardianRecord, NewGuardian, RecoveryCode, ENTROPY_LEN,
     FAILURES_BEFORE_ALERT, MAX_GUARDIANS,
 };
+use crate::unlock::{Requests, UnlockRequest, DELAY_GRANT_SECS};
 
-/// Lo que dura el permiso que da un guardián al escribir su clave.
+/// Lo que dura el permiso que da un guardián, con su clave o a distancia.
 pub const SECRET_GRANT_SECS: u64 = 600;
+
+/// Identificador del dispositivo: 16 bytes aleatorios que el agente genera al
+/// instalar. Liga las aprobaciones a distancia a este dispositivo.
+pub type DeviceId = [u8; 16];
 
 /// Respuesta a «¿puede hacerse esto ahora?».
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,6 +42,13 @@ pub enum DenyReason {
     NotPaired,
     /// Hace falta que un guardián lo autorice.
     NeedsAuthorization,
+    /// Hay una solicitud pendiente para esta acción.
+    Waiting {
+        /// Número de la solicitud.
+        request: u64,
+        /// Cuándo vence la espera; `None` si solo un guardián puede aprobarla.
+        ready_at: Option<u64>,
+    },
 }
 
 /// Permiso de un solo uso para una acción concreta.
@@ -49,25 +62,50 @@ struct Grant {
 /// Estado completo del anti-manipulación de un dispositivo.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Guard {
+    device: String,
     clock: TrustedClock,
     settings: Settings,
     guardians: Vec<GuardianRecord>,
+    server_key: Option<[u8; 32]>,
     grants: Vec<Grant>,
+    requests: Requests,
     failures: Failures,
+    windows: AccessWindows,
+    heartbeat: Heartbeat,
     log: EventLog,
 }
 
 impl Guard {
     /// Dispositivo sin emparejar: protección máxima y nada que aflojar.
-    pub fn unpaired(now: TimePoint) -> Self {
+    pub fn unpaired(device: DeviceId, now: TimePoint) -> Self {
         Self {
+            device: to_hex(&device),
             clock: TrustedClock::start(now),
             settings: Settings::locked_down(),
             guardians: Vec::new(),
+            server_key: None,
             grants: Vec::new(),
+            requests: Requests::default(),
             failures: Failures::default(),
+            windows: AccessWindows::default(),
+            heartbeat: Heartbeat::default(),
             log: EventLog::new(),
         }
+    }
+
+    /// Identificador del dispositivo, en hexadecimal.
+    pub fn device_id(&self) -> &str {
+        &self.device
+    }
+
+    /// `true` si hay un servidor vinculado para aprobaciones a distancia.
+    pub fn server_linked(&self) -> bool {
+        self.server_key.is_some()
+    }
+
+    /// Solicitudes de desbloqueo pendientes.
+    pub fn pending_requests(&self) -> Vec<UnlockRequest> {
+        self.requests.pending().to_vec()
     }
 
     // ---------------------------------------------------------------- consulta
@@ -108,14 +146,19 @@ impl Guard {
         if !self.is_paired() {
             return Decision::Denied(DenyReason::NotPaired);
         }
-        let granted = action
-            .normalized()
-            .ok()
-            .and_then(|action| self.grants.iter().find(|grant| grant.action == action));
-        match granted {
-            Some(grant) => Decision::Allowed {
+        let Ok(action) = action.normalized() else {
+            return Decision::Denied(DenyReason::NeedsAuthorization);
+        };
+        if let Some(grant) = self.find_grant(&action) {
+            return Decision::Allowed {
                 until: grant.expires_at,
-            },
+            };
+        }
+        match self.requests.pending().iter().find(|r| r.action == action) {
+            Some(request) => Decision::Denied(DenyReason::Waiting {
+                request: request.id,
+                ready_at: request.ready_at,
+            }),
             None => Decision::Denied(DenyReason::NeedsAuthorization),
         }
     }
@@ -162,6 +205,7 @@ impl Guard {
         // Primero se comprueban los datos: un fallo aquí no gasta el permiso.
         let (record, code) = GuardianRecord::create(id, &guardian)?;
         let grant = self.take_grant(&Action::AddGuardian)?;
+        self.requests.satisfy(&Action::AddGuardian);
         self.emit(EventKind::Performed {
             action: Action::AddGuardian,
             by: grant.by,
@@ -197,6 +241,7 @@ impl Guard {
         // Si la clave nueva no vale, el permiso sigue disponible.
         let code = record.set_secret(new_secret, entropy)?;
         let grant = self.take_grant(&action)?;
+        self.requests.satisfy(&action);
         self.emit(EventKind::Performed {
             action,
             by: grant.by,
@@ -229,7 +274,7 @@ impl Guard {
             return Err(GuardError::WrongSecret);
         };
         self.failures.reset();
-        self.grant(action, Authorizer::Secret(guardian));
+        self.grant(action, Authorizer::Secret { guardian }, SECRET_GRANT_SECS);
         Ok(guardian)
     }
 
@@ -257,7 +302,8 @@ impl Guard {
         self.failures.reset();
         self.grant(
             Action::ChangeSecret { guardian },
-            Authorizer::RecoveryCode(guardian),
+            Authorizer::RecoveryCode { guardian },
+            SECRET_GRANT_SECS,
         );
         Ok(guardian)
     }
@@ -280,10 +326,20 @@ impl Guard {
         // Se aplica sobre una copia: si falla, ni cambia nada ni gasta el permiso.
         let mut settings = self.settings.clone();
         settings.apply(&action, self.clock.now_secs())?;
+        let server_key = match &action {
+            Action::LinkServer { public_key } => Some(parse_server_key(public_key)?),
+            _ => self.server_key,
+        };
         let grant = self.take_grant(&action)?;
         self.settings = settings;
-        if let Action::RemoveGuardian { guardian } = &action {
-            self.guardians.retain(|g| g.id != *guardian);
+        self.server_key = server_key;
+        self.requests.satisfy(&action);
+        match &action {
+            Action::RemoveGuardian { guardian } => self.guardians.retain(|g| g.id != *guardian),
+            Action::ChangeMode {
+                mode: Mode::Parental,
+            } => self.requests.stop_all_delays(),
+            _ => {}
         }
         self.emit(EventKind::Performed {
             action,
@@ -301,6 +357,104 @@ impl Guard {
         Ok(())
     }
 
+    // ------------------------------------------------------------- solicitudes
+
+    /// El protegido pide autorización para `action`. Los guardianes reciben
+    /// aviso al instante.
+    ///
+    /// En autocontrol, pasada la espera la acción queda permitida durante una
+    /// hora. En parental la espera no vence: solo un guardián puede aprobarla,
+    /// con su clave o a distancia. Pedir dos veces lo mismo devuelve la
+    /// solicitud que ya había, sin reiniciar la espera.
+    pub fn request(
+        &mut self,
+        action: &Action,
+        now: TimePoint,
+    ) -> Result<UnlockRequest, GuardError> {
+        self.observe(now);
+        let action = self.validate(action)?;
+        let delay = match self.settings.mode {
+            Mode::SelfControl => Some(u64::from(self.settings.delay_hours) * 3_600),
+            Mode::Parental => None,
+        };
+        let (request, is_new) = self.requests.open(action, self.clock.now_secs(), delay)?;
+        if is_new {
+            self.emit(EventKind::UnlockRequested {
+                request: request.id,
+                action: request.action.clone(),
+                ready_at: request.ready_at,
+            });
+        }
+        Ok(request)
+    }
+
+    /// Cancela una solicitud pendiente. Puede hacerlo cualquiera.
+    pub fn cancel_request(&mut self, request: u64, now: TimePoint) -> Result<(), GuardError> {
+        self.observe(now);
+        self.requests
+            .remove(request)
+            .ok_or(GuardError::UnknownRequest)?;
+        self.emit(EventKind::UnlockCancelled { request });
+        Ok(())
+    }
+
+    /// Un guardián ha aprobado a distancia una solicitud. El permiso sirve
+    /// una vez y dura diez minutos.
+    pub fn approve_remotely(
+        &mut self,
+        approval: &Approval,
+        now: TimePoint,
+    ) -> Result<GuardianId, GuardError> {
+        self.observe(now);
+        if !self.is_paired() {
+            return Err(GuardError::NotPaired);
+        }
+        let server_key = self.server_key.ok_or(GuardError::NoServerLinked)?;
+        // La firma primero: una aprobación falsificada se anota aunque además
+        // sea incorrecta en otras cosas.
+        if !signature_is_valid(approval, &server_key) {
+            self.emit(EventKind::Tamper(Tamper::ForgedApproval));
+            return Err(GuardError::InvalidApproval("firma incorrecta"));
+        }
+        let body = &approval.body;
+        if body.device != self.device {
+            return Err(GuardError::InvalidApproval("es para otro dispositivo"));
+        }
+        if body.expires_at <= self.clock.now_secs() {
+            return Err(GuardError::InvalidApproval("ha caducado"));
+        }
+        if !self.guardians.iter().any(|g| g.id == body.guardian) {
+            return Err(GuardError::InvalidApproval("el guardián ya no existe"));
+        }
+        let request = self
+            .requests
+            .get(body.request)
+            .ok_or(GuardError::InvalidApproval(
+                "la solicitud no existe o ya se usó",
+            ))?;
+        if request.action != body.action {
+            return Err(GuardError::InvalidApproval("aprueba otra acción"));
+        }
+        // La situación puede haber cambiado desde que se pidió.
+        let action = self.validate(&request.action)?;
+        self.requests.remove(body.request);
+        self.grant(
+            action,
+            Authorizer::Remote {
+                guardian: body.guardian,
+                request: body.request,
+            },
+            SECRET_GRANT_SECS,
+        );
+        Ok(body.guardian)
+    }
+
+    /// El agente lo llama cada minuto: vencen esperas y pausas, se cierran
+    /// ventanas de agrupación y se emite la señal de vida.
+    pub fn tick(&mut self, now: TimePoint) {
+        self.observe(now);
+    }
+
     // ---------------------------------------------------------------- registro
 
     /// El agente ha bloqueado una conexión. `site` es la regla de la lista que
@@ -310,7 +464,9 @@ impl Guard {
         // Un nombre que no se puede normalizar se anota tal cual, recortado.
         let site =
             normalize_domain(site).unwrap_or_else(|_| site.chars().take(253).collect::<String>());
-        self.emit(EventKind::AccessAttempt { site, category });
+        for kind in self.windows.record(site, category, self.clock.now_secs()) {
+            self.emit(kind);
+        }
     }
 
     /// El agente ha detectado una manipulación.
@@ -348,6 +504,50 @@ impl Guard {
         }
         let now_secs = self.clock.now_secs();
         self.grants.retain(|grant| grant.expires_at > now_secs);
+
+        // Esperas vencidas: solo en autocontrol.
+        if self.settings.mode == Mode::Parental {
+            self.requests.stop_all_delays();
+        }
+        for request in self.requests.take_ready(now_secs) {
+            // Si la acción ya no tiene sentido (p. ej. quitar a un guardián
+            // que ya no está), la solicitud simplemente caduca.
+            let Ok(action) = self.validate(&request.action) else {
+                continue;
+            };
+            self.grant(
+                action.clone(),
+                Authorizer::Delay {
+                    request: request.id,
+                },
+                DELAY_GRANT_SECS,
+            );
+            self.emit(EventKind::UnlockReady {
+                request: request.id,
+                action,
+                until: now_secs.saturating_add(DELAY_GRANT_SECS),
+            });
+        }
+
+        if self
+            .settings
+            .paused_until
+            .is_some_and(|until| until <= now_secs)
+        {
+            self.settings.paused_until = None;
+            self.emit(EventKind::PauseEnded);
+        }
+
+        for kind in self.windows.close_expired(now_secs) {
+            self.emit(kind);
+        }
+
+        let log = &self.log;
+        if self.is_paired() && self.heartbeat.due(now_secs, |id| log.is_acknowledged(id)) {
+            let protection_active = !self.settings.is_paused(now_secs);
+            let id = self.emit(EventKind::Heartbeat { protection_active });
+            self.heartbeat.sent(now_secs, id);
+        }
     }
 
     /// Comprueba que la acción tiene sentido en el estado actual y la devuelve
@@ -374,13 +574,13 @@ impl Guard {
         }
     }
 
-    fn grant(&mut self, action: Action, by: Authorizer) {
+    fn grant(&mut self, action: Action, by: Authorizer, lasts_secs: u64) {
         // Un permiso nuevo para la misma acción sustituye al anterior.
         self.grants.retain(|grant| grant.action != action);
         self.grants.push(Grant {
             action: action.clone(),
             by,
-            expires_at: self.clock.now_secs().saturating_add(SECRET_GRANT_SECS),
+            expires_at: self.clock.now_secs().saturating_add(lasts_secs),
         });
         self.emit(EventKind::Authorized { action, by });
     }
@@ -405,9 +605,9 @@ impl Guard {
         }
     }
 
-    fn emit(&mut self, kind: EventKind) {
+    fn emit(&mut self, kind: EventKind) -> Option<EventId> {
         let urgency = urgency_of(&kind);
         self.log
-            .append(kind, urgency, self.clock.now_secs(), self.clock.wall_secs());
+            .append(kind, urgency, self.clock.now_secs(), self.clock.wall_secs())
     }
 }

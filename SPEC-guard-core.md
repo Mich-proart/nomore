@@ -35,7 +35,7 @@ Como `filter-core`, no abre sockets ni lee ficheros: quien la usa (`windows-agen
 | Cancelar una solicitud de desbloqueo | Permitido | — |
 | Permitir un dominio, desactivar apuestas o citas | Denegado | Permitido |
 | Pausar la protección (máximo 24 h, se reactiva sola) | Denegado | Permitido |
-| Desinstalar, cambiar de modo | Denegado | Permitido |
+| Desinstalar, cambiar de modo, vincular otro servidor | Denegado | Permitido |
 | Añadir el segundo guardián, quitar un guardián, cambiar una clave | Denegado | Permitido |
 
 Regla general: endurecer es libre, aflojar exige autorización.
@@ -45,7 +45,7 @@ Regla general: endurecer es libre, aflojar exige autorización.
 Tres vías, todas dejan evento y aviso al guardián:
 
 1. **Clave de un guardián** escrita en el dispositivo. Efecto inmediato (el permiso dura 10 min). Funciona sin conexión.
-2. **Aprobación a distancia**: el protegido pide, el guardián aprueba desde el aviso que recibe. Llega con `guardian-link`; aquí solo se define y se verifica la aprobación firmada.
+2. **Aprobación a distancia**: el protegido pide, el guardián aprueba desde el aviso que recibe. El servidor firma con Ed25519 dispositivo, solicitud, acción, guardián y caducidad; el dispositivo solo acepta la clave pública fijada con la acción «vincular servidor», que exige autorización. Funciona en los dos modos.
 3. **Espera** (solo autocontrol): el protegido pide, el guardián recibe aviso al instante, y pasada la espera la acción queda permitida durante 1 h. Cualquiera puede cancelarla antes.
 
 Detalles:
@@ -87,7 +87,8 @@ Todo lo relevante se anota como evento con hora, tipo y datos.
 | Solicitud de desbloqueo, pausa, cambio de política | Al instante |
 | Intento de acceso a pornografía | Al instante el primero; los siguientes al mismo sitio se agrupan durante 15 min |
 | Intento de acceso a apuestas o citas | Resumen diario |
-| Resumen | Diario, aunque no haya nada («sin incidencias»), para que el silencio también informe |
+| Resumen | Diario, aunque no haya nada («sin incidencias»), para que el silencio también informe. Lo compone y envía el servidor |
+| Señal de vida | Nunca se avisa: solo la usa el servidor para detectar silencios |
 
 Límite conocido: el DNS no distingue entre escribir una dirección y que una página normal cargue un anuncio de una casa de apuestas. Por eso los avisos dicen «intento de conexión a», no «visitó», y apuestas y citas van al resumen diario en vez de avisar al instante.
 
@@ -122,7 +123,8 @@ crates/guard-core/
   src/unlock.rs       → solicitudes de desbloqueo y su máquina de estados
   src/clock.rs        → tiempo de confianza a partir de reloj del sistema, monótono y servidor
   src/event.rs        → tipos de evento, registro encadenado, cola de salida
-  src/notify.rs       → de eventos a avisos: urgencia y agrupación
+  src/notify.rs       → de eventos a avisos: urgencia, agrupación y señal de vida
+  src/approval.rs     → aprobaciones a distancia firmadas
   src/state.rs        → serialización autenticada y fallo cerrado
   tests/              → pruebas de integración por escenario
 ```
@@ -135,32 +137,41 @@ Mismas convenciones que `filter-core`. La librería es una máquina de estados: 
 pub struct Guard { /* estado */ }
 
 impl Guard {
-    /// Arranca desde el estado guardado. Si no es válido, falla cerrado.
-    pub fn load(saved: Option<&[u8]>, device_key: &[u8], now: Instant) -> Guard;
+    /// Dispositivo sin emparejar: protección máxima. `device` son 16 bytes
+    /// aleatorios generados al instalar.
+    pub fn unpaired(device: DeviceId, now: TimePoint) -> Guard;
+    /// Primer guardián y modo. Devuelve su código de recuperación.
+    pub fn setup(&mut self, mode: Mode, guardian: NewGuardian, now: TimePoint)
+        -> Result<RecoveryCode, GuardError>;
 
     /// ¿Puede hacerse `action` ahora mismo?
-    pub fn check(&self, action: &Action, now: Instant) -> Decision;
+    pub fn check(&mut self, action: &Action, now: TimePoint) -> Decision;
 
-    /// El protegido pide autorización; devuelve cuándo quedará permitida.
-    pub fn request(&mut self, action: Action, now: Instant) -> Result<Request, GuardError>;
+    /// Las tres vías de autorización.
+    pub fn authorize_with_secret(&mut self, action: &Action, secret: &str, now: TimePoint)
+        -> Result<GuardianId, GuardError>;
+    pub fn request(&mut self, action: &Action, now: TimePoint) -> Result<UnlockRequest, GuardError>;
+    pub fn approve_remotely(&mut self, approval: &Approval, now: TimePoint)
+        -> Result<GuardianId, GuardError>;
 
-    /// El guardián autoriza con su clave.
-    pub fn authorize_with_secret(&mut self, action: &Action, secret: &str, now: Instant)
-        -> Result<(), GuardError>;
+    /// Aplicar lo autorizado (gasta el permiso) y endurecer (libre).
+    pub fn perform(&mut self, action: &Action, now: TimePoint) -> Result<(), GuardError>;
+    pub fn tighten(&mut self, change: &Tightening, now: TimePoint) -> Result<(), GuardError>;
 
-    /// Anota algo que ha detectado el agente.
-    pub fn record(&mut self, event: EventKind, now: Instant);
+    /// Lo que detecta el agente, y su llamada de cada minuto.
+    pub fn record_access(&mut self, site: &str, category: Category, now: TimePoint);
+    pub fn record_tamper(&mut self, tamper: Tamper, now: TimePoint);
+    pub fn tick(&mut self, now: TimePoint);
 
     /// Avisos listos para enviar, y confirmación de los ya recibidos.
     pub fn outbox(&self) -> Vec<Envelope>;
-    pub fn acknowledge(&mut self, up_to: EventId);
-
-    /// Estado para guardar en disco.
-    pub fn save(&self) -> Vec<u8>;
+    pub fn acknowledge(&mut self, up_to: EventId, now: TimePoint);
 }
 ```
 
-`Instant` agrupa reloj del sistema, reloj monótono y, si la hay, hora del servidor.
+Además: `add_guardian`, `change_secret`, `authorize_with_recovery_code`, `cancel_request`, y consultas (`settings`, `guardians`, `pending_requests`, `protection_active`…).
+
+`TimePoint` agrupa reloj del sistema, reloj monótono, identificador de arranque y, si la hay, hora del servidor.
 
 ## Pruebas
 

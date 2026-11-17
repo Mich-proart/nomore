@@ -6,6 +6,7 @@ use guard_core::{
 };
 
 pub const START: u64 = 1_800_000_000;
+pub const DEVICE: [u8; 16] = [0xd5; 16];
 pub const ANA: &str = "clave-de-ana";
 pub const LUIS: &str = "clave-de-luis";
 
@@ -33,7 +34,7 @@ pub fn guardian(name: &str, secret: &str, seed: u8) -> NewGuardian {
 
 /// Dispositivo emparejado con Ana como única guardiana.
 pub fn paired(mode: Mode) -> (Guard, RecoveryCode) {
-    let mut guard = Guard::unpaired(t(0));
+    let mut guard = Guard::unpaired(DEVICE, t(0));
     let code = guard.setup(mode, guardian("Ana", ANA, 1), t(0)).unwrap();
     (guard, code)
 }

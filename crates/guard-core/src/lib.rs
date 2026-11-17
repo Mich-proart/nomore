@@ -8,7 +8,7 @@
 //! use guard_core::{Action, Decision, Guard, Mode, NewGuardian, TimePoint, ENTROPY_LEN};
 //!
 //! let now = TimePoint { wall_secs: 1_800_000_000, monotonic_ms: 0, boot_id: 1, server_secs: None };
-//! let mut guard = Guard::unpaired(now);
+//! let mut guard = Guard::unpaired([0x42; 16], now);
 //! guard
 //!     .setup(
 //!         Mode::SelfControl,
@@ -28,6 +28,7 @@
 //! assert_eq!(guard.settings().allowlist, ["ejemplo.com"]);
 //! ```
 
+mod approval;
 mod clock;
 mod error;
 mod event;
@@ -35,19 +36,23 @@ mod guard;
 mod mode;
 mod notify;
 mod secret;
+mod unlock;
 
+pub use approval::{Approval, ApprovalBody};
 pub use clock::TimePoint;
 pub use error::GuardError;
 pub use event::{
     verify_chain, Authorizer, Category, ChainError, Envelope, Event, EventId, EventKind, Hash,
     Tamper, Urgency, GENESIS,
 };
-pub use guard::{Decision, DenyReason, Guard, SECRET_GRANT_SECS};
+pub use guard::{Decision, DenyReason, DeviceId, Guard, SECRET_GRANT_SECS};
 pub use mode::{
     Action, Mode, Settings, Tightening, Toggle, DEFAULT_DELAY_HOURS, MAX_DELAY_HOURS,
     MAX_LIST_ENTRIES, MAX_PAUSE_MINUTES,
 };
+pub use notify::{ACCESS_WINDOW_SECS, HEARTBEAT_SECS};
 pub use secret::{
     GuardianId, GuardianInfo, NewGuardian, RecoveryCode, ENTROPY_LEN, MAX_GUARDIANS,
     MIN_SECRET_CHARS,
 };
+pub use unlock::{UnlockRequest, DELAY_GRANT_SECS, MAX_PENDING_REQUESTS};

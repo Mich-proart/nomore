@@ -75,17 +75,37 @@ pub enum Tamper {
         /// Fallos consecutivos hasta ahora.
         attempts: u32,
     },
+    /// Llegó una aprobación a distancia con una firma que no es del servidor.
+    ForgedApproval,
 }
 
 /// Quién ha autorizado una acción.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "via", content = "guardian", rename_all = "snake_case")]
+#[serde(tag = "via", rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum Authorizer {
     /// Un guardián, escribiendo su clave en el dispositivo.
-    Secret(GuardianId),
+    Secret {
+        /// Qué guardián.
+        guardian: GuardianId,
+    },
     /// Un guardián, con su código de recuperación.
-    RecoveryCode(GuardianId),
+    RecoveryCode {
+        /// Qué guardián.
+        guardian: GuardianId,
+    },
+    /// Venció la espera de una solicitud de desbloqueo (solo autocontrol).
+    Delay {
+        /// Número de la solicitud.
+        request: u64,
+    },
+    /// Un guardián aprobó a distancia una solicitud.
+    Remote {
+        /// Qué guardián.
+        guardian: GuardianId,
+        /// Número de la solicitud.
+        request: u64,
+    },
 }
 
 /// Lo que ha pasado.
@@ -99,6 +119,17 @@ pub enum EventKind {
         site: String,
         /// Categoría de esa regla.
         category: Category,
+    },
+    /// Más intentos al mismo sitio dentro de la ventana de agrupación.
+    AccessRepeated {
+        /// Regla de la lista que coincidió.
+        site: String,
+        /// Categoría de esa regla.
+        category: Category,
+        /// Intentos además del primero, que ya se anotó.
+        count: u64,
+        /// Hora de confianza del primer intento de la ventana.
+        since: u64,
     },
     /// La cola estaba llena y estos eventos solo se contaron.
     Overflow {
@@ -144,6 +175,37 @@ pub enum EventKind {
         /// Quién la autorizó.
         by: Authorizer,
     },
+    /// El protegido pide autorización para una acción.
+    UnlockRequested {
+        /// Número de la solicitud.
+        request: u64,
+        /// Acción pedida.
+        action: Action,
+        /// Hora de confianza a la que vence la espera; `None` en modo
+        /// parental, donde solo un guardián puede aprobarla.
+        ready_at: Option<u64>,
+    },
+    /// Una solicitud se ha cancelado antes de vencer.
+    UnlockCancelled {
+        /// Número de la solicitud.
+        request: u64,
+    },
+    /// Venció la espera: la acción queda permitida durante una hora.
+    UnlockReady {
+        /// Número de la solicitud.
+        request: u64,
+        /// Acción permitida.
+        action: Action,
+        /// Hasta qué hora de confianza.
+        until: u64,
+    },
+    /// Terminó una pausa y la protección vuelve a estar activa.
+    PauseEnded,
+    /// Señal de vida: el dispositivo sigue aquí.
+    Heartbeat {
+        /// `false` si está en pausa.
+        protection_active: bool,
+    },
     /// El protegido ha endurecido la protección por su cuenta.
     Tightened {
         /// Qué ha cambiado.
@@ -154,7 +216,10 @@ pub enum EventKind {
 impl EventKind {
     /// Los intentos de acceso son los únicos que se pueden resumir.
     fn is_access(&self) -> bool {
-        matches!(self, Self::AccessAttempt { .. })
+        matches!(
+            self,
+            Self::AccessAttempt { .. } | Self::AccessRepeated { .. }
+        )
     }
 }
 
@@ -166,6 +231,8 @@ pub enum Urgency {
     Immediate,
     /// Va en el resumen diario.
     Digest,
+    /// No se avisa: solo sirve al servidor (señal de vida).
+    Silent,
 }
 
 /// Un evento tal como viaja al servidor.
@@ -267,6 +334,8 @@ pub(crate) struct EventLog {
     overflow_access: u64,
     /// Otros eventos que no cupieron ni en la reserva.
     overflow_other: u64,
+    /// Último evento cuya recepción ha confirmado el servidor.
+    acknowledged: EventId,
 }
 
 impl EventLog {
@@ -277,22 +346,32 @@ impl EventLog {
             outbox: VecDeque::new(),
             overflow_access: 0,
             overflow_other: 0,
+            acknowledged: 0,
         }
     }
 
-    /// Anota un evento. Con la cola llena, los de acceso solo se cuentan.
-    pub(crate) fn append(&mut self, kind: EventKind, urgency: Urgency, at: u64, wall: u64) {
+    /// Anota un evento y devuelve su número, o `None` si con la cola llena
+    /// solo se ha contado.
+    pub(crate) fn append(
+        &mut self,
+        kind: EventKind,
+        urgency: Urgency,
+        at: u64,
+        wall: u64,
+    ) -> Option<EventId> {
         // Con la cola llena se pierde el detalle, pero no la cuenta.
         if kind.is_access() && self.outbox.len() >= ACCESS_CAPACITY {
             self.overflow_access = self.overflow_access.saturating_add(1);
+            None
         } else if self.outbox.len() >= ACCESS_CAPACITY + RESERVED_CAPACITY {
             self.overflow_other = self.overflow_other.saturating_add(1);
+            None
         } else {
-            self.push(kind, urgency, at, wall);
+            self.push(kind, urgency, at, wall)
         }
     }
 
-    fn push(&mut self, kind: EventKind, urgency: Urgency, at: u64, wall: u64) {
+    fn push(&mut self, kind: EventKind, urgency: Urgency, at: u64, wall: u64) -> Option<EventId> {
         let event = Event {
             v: FORMAT_VERSION,
             id: self.last_id + 1,
@@ -304,7 +383,7 @@ impl EventLog {
         // Serializar estos tipos no puede fallar; si algún día fallara, se
         // pierde el evento pero no se rompe la cadena ni el servicio.
         let Ok(payload) = serde_json::to_string(&event) else {
-            return;
+            return None;
         };
         self.last_id = event.id;
         self.last_hash = hash_of(&payload);
@@ -313,6 +392,7 @@ impl EventLog {
             urgency,
             payload,
         });
+        Some(event.id)
     }
 
     /// Eventos pendientes de entregar, del más antiguo al más reciente.
@@ -322,6 +402,9 @@ impl EventLog {
 
     /// El servidor confirma que tiene todo hasta `up_to` incluido.
     pub(crate) fn acknowledge(&mut self, up_to: EventId, at: u64, wall: u64) {
+        // No se puede confirmar lo que aún no existe.
+        let up_to = up_to.min(self.last_id);
+        self.acknowledged = self.acknowledged.max(up_to);
         while self
             .outbox
             .front()
@@ -345,6 +428,11 @@ impl EventLog {
 
     pub(crate) fn pending(&self) -> usize {
         self.outbox.len()
+    }
+
+    /// `true` si el servidor ya confirmó el evento `id`.
+    pub(crate) fn is_acknowledged(&self, id: EventId) -> bool {
+        id <= self.acknowledged
     }
 }
 

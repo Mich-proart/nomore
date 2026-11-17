@@ -99,7 +99,8 @@ impl Settings {
             Action::Uninstall
             | Action::AddGuardian
             | Action::RemoveGuardian { .. }
-            | Action::ChangeSecret { .. } => {}
+            | Action::ChangeSecret { .. }
+            | Action::LinkServer { .. } => {}
         }
         Ok(())
     }
@@ -187,6 +188,12 @@ pub enum Action {
         /// De quién es la clave.
         guardian: GuardianId,
     },
+    /// Fijar o cambiar el servidor cuyas aprobaciones a distancia se aceptan.
+    /// Afloja porque abre una vía de autorización.
+    LinkServer {
+        /// Clave pública Ed25519 del servidor, 64 caracteres hexadecimales.
+        public_key: String,
+    },
 }
 
 impl Action {
@@ -204,6 +211,15 @@ impl Action {
                 return Err(GuardError::InvalidAction(
                     "la pausa dura de 1 a 1440 minutos",
                 ));
+            }
+            Self::LinkServer { public_key } => {
+                let key = public_key.trim().to_ascii_lowercase();
+                if key.len() != 64 || !key.bytes().all(|b| b.is_ascii_hexdigit()) {
+                    return Err(GuardError::InvalidAction(
+                        "la clave del servidor son 64 caracteres hexadecimales",
+                    ));
+                }
+                Self::LinkServer { public_key: key }
             }
             Self::ShortenDelay { hours: 0 } => {
                 return Err(GuardError::InvalidAction("la espera mínima es de 1 hora"));

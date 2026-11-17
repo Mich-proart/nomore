@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{events, guardian, last_event, paired, t, ANA, LUIS};
+use common::{events, guardian, last_event, paired, t, ANA, DEVICE, LUIS};
 use guard_core::{
     Action, Authorizer, Decision, DenyReason, EventKind, Guard, GuardError, GuardianId, Mode,
     Tamper, Toggle, SECRET_GRANT_SECS,
@@ -61,7 +61,7 @@ fn pairing_twice_is_refused() {
 
 #[test]
 fn pairing_with_a_weak_secret_leaves_the_device_unpaired() {
-    let mut guard = Guard::unpaired(t(0));
+    let mut guard = Guard::unpaired(DEVICE, t(0));
     assert_eq!(
         guard
             .setup(Mode::SelfControl, guardian("Ana", "corta", 1), t(0))
@@ -84,7 +84,9 @@ fn the_secret_grants_one_action_once() {
         last_event(&guard),
         EventKind::Authorized {
             action: allow("ejemplo.com"),
-            by: Authorizer::Secret(GuardianId::First),
+            by: Authorizer::Secret {
+                guardian: GuardianId::First
+            },
         }
     );
 
@@ -322,7 +324,7 @@ fn either_guardian_can_authorize_anything() {
                 last_event(&guard),
                 EventKind::Performed {
                     action,
-                    by: Authorizer::Secret(expected)
+                    by: Authorizer::Secret { guardian: expected }
                 },
                 "el evento dice quién autorizó"
             );
@@ -514,7 +516,9 @@ fn recovery_code_lets_a_guardian_reset_only_their_own_secret() {
             action: Action::ChangeSecret {
                 guardian: GuardianId::First
             },
-            by: Authorizer::RecoveryCode(GuardianId::First),
+            by: Authorizer::RecoveryCode {
+                guardian: GuardianId::First
+            },
         }
     );
     // El código no autoriza nada más.

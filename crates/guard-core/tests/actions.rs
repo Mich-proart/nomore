@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{events, last_event, paired, t, ANA};
+use common::{events, last_event, paired, t, ANA, DEVICE};
 use guard_core::{
     verify_chain, Action, Authorizer, Category, Decision, DenyReason, EventKind, Guard, GuardError,
     GuardianId, Mode, Tamper, Tightening, Toggle, Urgency, GENESIS,
@@ -38,7 +38,7 @@ fn loosening_actions() -> Vec<Action> {
 
 #[test]
 fn unpaired_device_is_locked_down_and_nothing_can_be_loosened() {
-    let mut guard = Guard::unpaired(t(0));
+    let mut guard = Guard::unpaired(DEVICE, t(0));
     assert!(!guard.is_paired());
     assert!(guard.protection_active());
     assert!(guard.settings().block_gambling && guard.settings().block_dating);
@@ -107,7 +107,9 @@ fn every_loosening_action_works_once_authorized() {
             last_event(&guard),
             EventKind::Performed {
                 action: action.clone(),
-                by: Authorizer::Secret(GuardianId::First),
+                by: Authorizer::Secret {
+                    guardian: GuardianId::First
+                },
             }
         );
 
@@ -204,7 +206,7 @@ fn tightening_is_free_and_recorded() {
 
 #[test]
 fn tightening_works_even_before_pairing() {
-    let mut guard = Guard::unpaired(t(0));
+    let mut guard = Guard::unpaired(DEVICE, t(0));
     guard
         .tighten(
             &Tightening::BlockDomain {
@@ -314,11 +316,12 @@ fn moving_the_system_clock_is_recorded_as_tampering() {
     jumped.wall_secs += 3 * 86_400;
     guard.check(&Action::Uninstall, jumped);
 
-    assert!(matches!(
-        last_event(&guard),
-        EventKind::Tamper(Tamper::ClockChanged { .. })
-    ));
-    assert_eq!(guard.outbox().last().unwrap().urgency, Urgency::Immediate);
+    let outbox = guard.outbox();
+    let jump = outbox
+        .iter()
+        .find(|e| e.payload.contains("clock_changed"))
+        .expect("falta el evento de reloj alterado");
+    assert_eq!(jump.urgency, Urgency::Immediate);
     assert_eq!(
         guard.now_secs(),
         common::START + 60,
@@ -336,15 +339,16 @@ fn everything_ends_up_in_one_verifiable_chain() {
     guard.perform(&allow, t(2)).unwrap();
     guard.record_tamper(Tamper::VpnDetected, t(3));
 
-    assert_eq!(guard.pending_events(), 4);
+    // Emparejado, señal de vida, autorizado, aplicado y VPN.
+    assert_eq!(guard.pending_events(), 5);
     let payloads: Vec<String> = guard.outbox().into_iter().map(|e| e.payload).collect();
     let (last_id, hash) = verify_chain(0, &GENESIS, &payloads).unwrap();
-    assert_eq!(last_id, 4);
+    assert_eq!(last_id, 5);
 
     // Tras confirmar, la cadena continúa desde donde iba.
     guard.acknowledge(last_id, t(4));
     assert_eq!(guard.pending_events(), 0);
     guard.record_tamper(Tamper::HostsChanged, t(5));
     let payloads: Vec<String> = guard.outbox().into_iter().map(|e| e.payload).collect();
-    assert_eq!(verify_chain(last_id, &hash, &payloads).unwrap().0, 5);
+    assert_eq!(verify_chain(last_id, &hash, &payloads).unwrap().0, 6);
 }

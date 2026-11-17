@@ -41,25 +41,25 @@ cargo test --workspace
 ### Punto de control A
 - [x] Comprobación común en verde.
 - [x] Escenario completo: emparejar, autorizar con clave «permitir un dominio», aplicarlo y ver los eventos en la cola.
-- [ ] Revisión con Michell antes de seguir.
+- [x] Revisión con Michell antes de seguir.
 
 ## Fase 2: Autorización y avisos
 
-- [ ] **Tarea 5: Desbloqueo con espera y pausa** (M)
+- [x] **Tarea 5: Desbloqueo con espera y pausa** (M)
   - `unlock.rs`: solicitud, cancelación, vencimiento en hora de confianza, ventana de 1 h, denegación en modo parental, pausa de 24 h como máximo que se reanuda sola, y `tick`.
   - Aceptación: en autocontrol la acción queda permitida a las 72 h y deja de estarlo 1 h después; en parental se deniega; alargar la espera es libre y acortarla exige autorización; adelantar el reloj no la acorta.
   - Verificación: comprobación común.
   - Dependencias: 4.
-  - Ficheros: `src/unlock.rs`, `src/mode.rs`, `src/lib.rs`, `tests/unlock.rs`.
+  - Ficheros: `src/unlock.rs`, `src/guard.rs`, `src/lib.rs`, `tests/unlock.rs`.
 
-- [ ] **Tarea 6: Aprobación a distancia firmada** (S)
+- [x] **Tarea 6: Aprobación a distancia firmada** (S)
   - Verificar aprobaciones Ed25519 ligadas a dispositivo, solicitud, acción y caducidad.
   - Aceptación: una aprobación válida concede el permiso; se rechazan las de firma incorrecta, otra solicitud, otra acción, caducadas o ya usadas.
   - Verificación: comprobación común.
   - Dependencias: 5.
   - Ficheros: `src/approval.rs`, `src/lib.rs`, `tests/approval.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 7: Intentos de acceso, urgencia y señal de vida** (M)
+- [x] **Tarea 7: Intentos de acceso, urgencia y señal de vida** (M)
   - `notify.rs`: agrupación de 15 min por sitio, evento de repetidos, urgencia de cada evento y señal de vida cada 15 min desde `tick`.
   - Aceptación: 40 intentos al mismo sitio en un minuto dan un evento inmediato y, al cerrar la ventana, uno de «39 más»; pornografía es inmediata y apuestas y citas van a resumen; toda manipulación es inmediata.
   - Verificación: comprobación común.
@@ -67,8 +67,8 @@ cargo test --workspace
   - Ficheros: `src/notify.rs`, `src/event.rs`, `src/lib.rs`, `tests/notify.rs`.
 
 ### Punto de control B
-- [ ] Comprobación común en verde.
-- [ ] Cada fila de «Qué exige autorización» y de «Avisos» tiene prueba (criterio 1).
+- [x] Comprobación común en verde.
+- [x] Cada fila de «Qué exige autorización» y de «Avisos» tiene prueba (criterio 1).
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 3: Garantías
