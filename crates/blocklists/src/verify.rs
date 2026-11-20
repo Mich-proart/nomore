@@ -42,8 +42,8 @@ pub struct Fetch {
 
 impl Manifest {
     /// Qué ficheros hacen falta para pasar de `installed` a esta publicación:
-    /// la diferencia si la hay desde la versión instalada, y si no el
-    /// binario completo.
+    /// la diferencia si la hay desde la versión instalada y ocupa menos que
+    /// el binario completo, y si no el completo.
     pub fn plan(&self, installed: Option<&Installed>) -> Vec<Fetch> {
         Category::ALL
             .into_iter()
@@ -51,7 +51,8 @@ impl Manifest {
                 let entry = self.entry(category)?;
                 let delta = installed
                     .filter(|i| i.lists.contains_key(&category))
-                    .and_then(|i| entry.deltas.iter().find(|d| d.from == i.version));
+                    .and_then(|i| entry.deltas.iter().find(|d| d.from == i.version))
+                    .filter(|delta| delta.file.size < entry.file.size);
                 Some(match delta {
                     Some(delta) => Fetch {
                         category,

@@ -80,10 +80,16 @@ report.md                qué entró, qué salió, qué se descartó y por qué
 ## Comandos
 
 ```
-Probar:     cargo test -p blocklists -p blocklists-build
-Generar:    cargo run -p blocklists-build --release -- --config lists.toml --out dist/
-Verificar:  cargo run -p blocklists-build --release -- verify dist/
+Probar:        cargo test -p blocklists -p blocklists-build
+Clave nueva:   nomore-lists keygen --out nomore-lists.key
+Clave pública: nomore-lists public-key --key nomore-lists.key
+Generar:       NOMORE_LISTS_SIGNING_KEY=… nomore-lists build --config lists.toml \
+                 --protected protected.txt --popular tranco.csv --reviewed reviewed.txt \
+                 --previous anterior/ --version 2026112001 --date 2026-11-20 --out dist/
+Verificar:     nomore-lists verify dist/ --public-key … [--from anterior/]
 ```
+
+(`nomore-lists` es el binario de `crates/blocklists-build`: `cargo run -p blocklists-build --release -- …`.)
 
 ## Estructura
 

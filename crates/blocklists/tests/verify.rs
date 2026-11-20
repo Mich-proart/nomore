@@ -158,3 +158,19 @@ fn a_list_of_the_wrong_category_is_rejected_even_if_listed_in_the_manifest() {
         Err(ListError::BadList(_))
     ));
 }
+
+#[test]
+fn a_delta_bigger_than_the_full_list_is_not_used() {
+    // Lista casi entera nueva: la diferencia ocupa más que el binario.
+    let v1 = content("a");
+    let v2 = content("b");
+    let r = release(2, &v2, &[(1, &v1)], &key());
+    let m = verified(&r, Some(1));
+    let current = installed(1, &v1);
+    let plan = m.plan(Some(&current));
+    assert!(plan.iter().all(|f| !f.is_delta), "{plan:?}");
+    assert_eq!(
+        m.apply(Some(&current), &fetch(&r, &plan)).unwrap(),
+        installed(2, &v2)
+    );
+}

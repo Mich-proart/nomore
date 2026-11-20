@@ -215,6 +215,12 @@ impl CategoryList {
         self.set.contains(name)
     }
 
+    /// `true` si la lista bloquea `domain`: está él o uno de sus padres.
+    /// Un texto que no es un dominio válido no está bloqueado.
+    pub fn blocks(&self, domain: &str) -> bool {
+        DomainName::parse(domain).is_ok_and(|name| self.contains(&name))
+    }
+
     pub(crate) fn matching_suffix<'a>(&self, name: &'a DomainName) -> Option<&'a str> {
         self.set.matching_suffix(name)
     }
@@ -272,6 +278,15 @@ mod tests {
         assert!(CategoryList::from_hashes(Category::Porn, vec![2, 1]).is_err());
         assert!(CategoryList::from_hashes(Category::Porn, vec![1, 1]).is_err());
         assert!(CategoryList::from_hashes(Category::Porn, vec![]).is_ok());
+    }
+
+    #[test]
+    fn blocks_checks_the_domain_and_its_parents() {
+        let l = list(Category::Porn, &["pornhub.com"]);
+        assert!(l.blocks("pornhub.com"));
+        assert!(l.blocks("Es.PornHub.com."));
+        assert!(!l.blocks("notpornhub.com"));
+        assert!(!l.blocks("no es un dominio"));
     }
 
     #[test]

@@ -41,41 +41,41 @@ cargo test --workspace
 ### Punto de control A
 - [x] Comprobación común en verde.
 - [x] Los cinco tipos de material alterado de la especificación se rechazan (criterio 2).
-- [ ] Revisión con Michell antes de seguir.
+- [x] Revisión con Michell antes de seguir.
 
 ## Fase 2: Generador
 
-- [ ] **Tarea 5: Lectura de formatos** (S)
+- [x] **Tarea 5: Lectura de formatos** (S)
   - Crear `crates/blocklists-build` y `parse.rs`: hosts, un dominio por línea, comodín y Adblock básico; lo demás se cuenta como ignorado.
   - Aceptación: cada formato con su prueba sobre ficheros de ejemplo reales recortados; IP, `localhost`, comentarios y reglas Adblock complejas se ignoran y se cuentan.
   - Verificación: comprobación común.
   - Dependencias: ninguna.
   - Ficheros: `Cargo.toml` del crate, `src/main.rs`, `src/parse.rs`, `tests/fixtures/`.
 
-- [ ] **Tarea 6: Limpieza y combinación** (M)
+- [x] **Tarea 6: Limpieza y combinación** (M)
   - `clean.rs`: normalizar (incluido punycode), unir, quitar duplicados, colapsar subdominios, protegidos y cuarentena de populares.
   - Aceptación: `ES.PornHub.com.` y `xn--…` se normalizan; `es.pornhub.com` desaparece si está `pornhub.com`; un protegido nunca sale; un dominio del top nuevo en la categoría va a cuarentena y al informe.
   - Verificación: comprobación común.
   - Dependencias: 5.
-  - Ficheros: `src/clean.rs`, `src/main.rs`, `protected.txt`, `tests/clean.rs`.
+  - Ficheros: `src/clean.rs`, `src/lib.rs`; `protected.txt` real en la tarea 9.
 
-- [ ] **Tarea 7: Fuentes, descarga y reserva** (M)
+- [x] **Tarea 7: Fuentes, descarga y reserva** (M)
   - `sources.rs`: leer `lists.toml`, descargar con tiempo límite, comprobar tamaño mínimo y caída máxima del 30 %, y usar la última versión buena si falla.
   - Aceptación: con un servidor HTTP local de pruebas, una fuente caída o que encoge usa la copia anterior y lo dice el informe; una fuente sin copia anterior que falla hace fallar la ejecución sin publicar.
   - Verificación: comprobación común.
   - Dependencias: 6.
-  - Ficheros: `src/sources.rs`, `src/main.rs`, `lists.toml`, `tests/sources.rs`.
+  - Ficheros: `src/sources.rs`, `src/config.rs`, `tests/sources.rs`; `lists.toml` real en la tarea 9.
 
-- [ ] **Tarea 8: Publicación, firma y `keygen`** (M)
+- [x] **Tarea 8: Publicación, firma y `keygen`** (M)
   - `publish.rs`: binarios, diferencias con las 7 versiones anteriores, manifiesto, firma, `SOURCES.md` e informe; subcomandos `keygen` y `verify`.
   - Aceptación: el verificador de la fase 1 acepta la publicación y actualiza con diferencias desde la anterior; dos ejecuciones con las mismas entradas dan bytes idénticos (criterio 6).
-  - Verificación: comprobación común; `cargo run -p blocklists-build -- build` sobre fuentes de ejemplo y `verify` del resultado.
+  - Verificación: comprobación común; `nomore-lists keygen`, dos `build` seguidos y `verify --from` probados a mano.
   - Dependencias: 3 y 7.
   - Ficheros: `src/publish.rs`, `src/main.rs`, `tests/publish.rs`.
 
 ### Punto de control B
-- [ ] Comprobación común en verde.
-- [ ] Generar → verificar → actualizar con diferencia funciona de punta a punta con fuentes de ejemplo.
+- [x] Comprobación común en verde.
+- [x] Generar → verificar → actualizar con diferencia funciona de punta a punta con fuentes de ejemplo.
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 3: Producción

@@ -54,4 +54,5 @@ jobs:
         with:
           key: ${{ matrix.target }}
       - name: Comprobar
-        run: cargo check --workspace --target ${{ matrix.target }}
+        # El generador solo se ejecuta en el servidor de listas, no en los dispositivos.
+        run: cargo check --workspace --exclude blocklists-build --target ${{ matrix.target }}
