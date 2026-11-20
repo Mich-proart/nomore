@@ -206,3 +206,29 @@ fn a_previous_release_signed_by_another_key_is_refused() {
     let other = [0x99u8; 32];
     assert!(blocklists_build::publish::load_previous(&dir, &[other]).is_err());
 }
+
+#[test]
+fn popular_domains_from_two_independent_sources_or_own_lists_skip_quarantine() {
+    let w = world("trusted");
+    let (out, summary) = w.build(2026112001, &[], &remote(PORN), "v1").unwrap();
+    let (installed, _) = install(&out, None);
+    let filter = Filter::new(installed.category_lists().unwrap(), Policy::default()).unwrap();
+
+    // Dos mantenedores distintos.
+    assert_eq!(
+        filter.explain("doble.com"),
+        Verdict::Blocked(Category::Porn)
+    );
+    // Lista propia.
+    assert_eq!(
+        filter.explain("propio.com"),
+        Verdict::Blocked(Category::Porn)
+    );
+    // Una sola fuente: a revisión.
+    assert_eq!(filter.explain("solo-extra-popular.com"), Verdict::Allowed);
+    assert_eq!(filter.explain("popular-nuevo.com"), Verdict::Allowed);
+
+    let porn = &summary.categories[&Category::Porn];
+    assert_eq!(porn.trusted_popular, 2);
+    assert!(porn.removed.quarantined.contains("solo-extra-popular.com"));
+}

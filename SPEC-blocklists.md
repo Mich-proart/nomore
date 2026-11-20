@@ -38,7 +38,7 @@ Cada fuente se declara en un fichero de configuración (URL, formato, categoría
 2. **Unir y quitar duplicados** por categoría.
 3. **Colapsar subdominios**: si está `pornhub.com`, sobra `es.pornhub.com`. `filter-core` ya bloquea los subdominios.
 4. **Lista de protegidos**: dominios que nunca se bloquean por categoría aunque una fuente los incluya. Contiene buscadores (para que SafeSearch funcione), servicios del sistema (Microsoft, Apple, Google, actualizaciones), bancos y administración pública, y las redes sociales generalistas (decisión ya tomada: las cubre `screen-ai`). Si un protegido aparece en una fuente, se descarta y se anota en el informe.
-5. **Alarma de falsos positivos**: si una fuente mete en una lista un dominio del top 10 000 de Tranco que no estaba antes, ese dominio queda fuera hasta revisarlo a mano, y la ejecución abre un aviso en el repositorio.
+5. **Alarma de falsos positivos**: si un dominio del top 10 000 de Tranco entra nuevo en una lista, queda en cuarentena (fuera) hasta revisarlo a mano, y la ejecución abre un aviso en el repositorio. Se acepta sin revisión si lo traen al menos dos fuentes de mantenedores distintos, si está en una lista propia o si está en el control (decisión del 20-11-2026). Lo revisado y aceptado va a `reviewed.txt`; los falsos positivos, a `protected.txt`.
 6. **Fuente caída o sospechosa**: si una fuente no responde, o su tamaño cae más de un 30 % respecto a la vez anterior, se usa su última versión buena. Nunca se publica una lista mucho más pequeña por un fallo de descarga.
 
 ## Lo que se publica
@@ -140,3 +140,5 @@ crates/blocklists-build/
 - **UT1**: solo su lista de citas, citando la fuente; se confirma la versión de la licencia con el mantenedor antes de publicar. Sus listas de redirectores quedan fuera.
 - **Tamaño**: si la lista de pornografía pasa de 32 MB en memoria, se quitan primero los dominios que ya no existen.
 - **VPN de empresa y acceso remoto** (GlobalProtect, Tailscale, Twingate, NetBird, ngrok): protegidas, para no romper la VPN del trabajo.
+- **Cuarentena**: aceptación automática con dos fuentes independientes, lista propia o control; el resto, revisión manual.
+- **Control de calidad**: basta con que un sitio de control quede bloqueado, aunque sea en otra categoría (un sitio de citas que una lista de porno también incluye).

@@ -96,6 +96,9 @@ pub struct Cleaning<'a> {
     pub popular: &'a HashSet<String>,
     /// Dominios populares ya revisados y aceptados.
     pub reviewed: &'a HashSet<String>,
+    /// Dominios populares aceptados sin revisión en esta categoría: los traen
+    /// dos fuentes independientes, una lista propia o el control.
+    pub trusted: &'a HashSet<String>,
     /// La lista de esta categoría en la publicación anterior, si la hay.
     pub previous: Option<&'a CategoryList>,
 }
@@ -113,6 +116,7 @@ pub fn clean(
             removed.protected.insert(domain);
         } else if with.popular.contains(&domain)
             && !with.reviewed.contains(&domain)
+            && !with.trusted.contains(&domain)
             && !with.previous.is_some_and(|list| list.blocks(&domain))
         {
             removed.quarantined.insert(domain);
@@ -212,10 +216,12 @@ mod tests {
             &CategoryList::build(filter_core::Category::Porn, ["pornhub.com"]).unwrap(),
         )
         .unwrap();
+        let trusted: HashSet<String> = HashSet::new();
         let with = Cleaning {
             protected: &protected,
             popular: &popular,
             reviewed: &reviewed,
+            trusted: &trusted,
             previous: Some(&previous),
         };
         let input = set(&[

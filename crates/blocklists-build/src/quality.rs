@@ -36,7 +36,7 @@ pub fn load_control(dir: &Path) -> Result<Control, String> {
 /// Resultado de los controles.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct QualityReport {
-    /// Sitios de control que no han quedado bloqueados en su categoría.
+    /// Sitios de control que no han quedado bloqueados.
     pub missing: Vec<(Category, String)>,
     /// Sitios legítimos populares que han quedado bloqueados.
     pub false_positives: Vec<(String, Category)>,
@@ -68,7 +68,9 @@ pub fn check(
     for (category, domains) in control {
         for domain in domains {
             report.checked.0 += 1;
-            if filter.explain(domain) != Verdict::Blocked(*category) {
+            // Basta con que quede bloqueado: un sitio de citas que una fuente
+            // de porno también incluye sale como porno, y sigue bloqueado.
+            if !matches!(filter.explain(domain), Verdict::Blocked(_)) {
                 report.missing.push((*category, domain.clone()));
             }
         }
@@ -124,6 +126,14 @@ mod tests {
         );
         assert_eq!(report.checked, (2, 2));
         assert!(!report.passed());
+    }
+
+    #[test]
+    fn a_control_site_blocked_under_another_category_counts_as_blocked() {
+        let mut control = Control::new();
+        control.insert(Category::Dating, ["pornhub.com".to_owned()].into());
+        let report = check(&lists(), &control, &[], &HashSet::new()).unwrap();
+        assert!(report.missing.is_empty());
     }
 
     #[test]

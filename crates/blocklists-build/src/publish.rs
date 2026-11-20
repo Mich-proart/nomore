@@ -13,7 +13,7 @@ use ed25519_dalek::{Signer, SigningKey};
 use filter_core::{Category, CategoryList};
 
 use crate::clean::{clean, Cleaning, Protected, Removed};
-use crate::config::{category, Config};
+use crate::config::{category, Config, OWN_MAINTAINER};
 use crate::quality::{check, Control, QualityReport};
 use crate::sources::{gather, write_copy, Fetcher, Gathered, Status};
 
@@ -107,6 +107,9 @@ pub struct CategorySummary {
     pub domains: usize,
     /// Lo quitado.
     pub removed: Removed,
+    /// Dominios populares aceptados sin revisión (dos fuentes, lista propia
+    /// o control).
+    pub trusted_popular: usize,
     /// Tamaño del binario.
     pub bytes: u64,
     /// Añadidos y quitados respecto a la publicación anterior.
@@ -148,10 +151,12 @@ pub fn build(inputs: &Inputs, fetcher: &dyn Fetcher, out: &Path) -> Result<Summa
             .filter(|g| category(&g.source.category) == Ok(cat))
             .flat_map(|g| g.domains.iter().cloned())
             .collect();
+        let trusted = trusted_popular(&union, &gathered, cat, inputs);
         let cleaning = Cleaning {
             protected: inputs.protected,
             popular: inputs.popular,
             reviewed: inputs.reviewed,
+            trusted: &trusted,
             previous: latest.and_then(|p| p.lists.get(&cat)),
         };
         let (kept, removed) = clean(union, &inputs.config.tlds(cat), &cleaning);
@@ -165,6 +170,7 @@ pub fn build(inputs: &Inputs, fetcher: &dyn Fetcher, out: &Path) -> Result<Summa
         categories.insert(
             cat,
             CategorySummary {
+                trusted_popular: trusted.len(),
                 domains: kept.len(),
                 removed,
                 bytes: bytes.len() as u64,
@@ -271,6 +277,37 @@ pub fn build(inputs: &Inputs, fetcher: &dyn Fetcher, out: &Path) -> Result<Summa
     Ok(summary)
 }
 
+/// Dominios populares de `union` que no necesitan revisión: los traen dos
+/// mantenedores distintos, una lista propia, o están en el control.
+fn trusted_popular(
+    union: &BTreeSet<String>,
+    gathered: &[Gathered],
+    cat: Category,
+    inputs: &Inputs,
+) -> HashSet<String> {
+    let sources: Vec<&Gathered> = gathered
+        .iter()
+        .filter(|g| category(&g.source.category) == Ok(cat))
+        .collect();
+    let control = inputs.control.and_then(|c| c.get(&cat));
+    union
+        .iter()
+        .filter(|domain| inputs.popular.contains(*domain))
+        .filter(|domain| {
+            if control.is_some_and(|c| c.contains(*domain)) {
+                return true;
+            }
+            let maintainers: HashSet<&str> = sources
+                .iter()
+                .filter(|g| g.domains.contains(*domain))
+                .map(|g| g.source.maintainer.as_str())
+                .collect();
+            maintainers.contains(OWN_MAINTAINER) || maintainers.len() >= 2
+        })
+        .cloned()
+        .collect()
+}
+
 fn write(out: &Path, name: &str, bytes: &[u8]) -> Result<(), String> {
     std::fs::write(out.join(name), bytes).map_err(|e| format!("{name}: {e}"))
 }
@@ -301,18 +338,19 @@ fn report_md(inputs: &Inputs, gathered: &[Gathered], summary: &Summary) -> Strin
         "# Informe de la versión {}\n\nFecha: {}\n\n",
         inputs.version, inputs.date
     );
-    text.push_str("## Categorías\n\n| Categoría | Dominios | Tamaño | Añadidos | Quitados | Protegidos descartados | En cuarentena | Subdominios colapsados |\n|---|---|---|---|---|---|---|---|\n");
+    text.push_str("## Categorías\n\n| Categoría | Dominios | Tamaño | Añadidos | Quitados | Protegidos descartados | Populares aceptados | En cuarentena | Subdominios colapsados |\n|---|---|---|---|---|---|---|---|---|\n");
     for (cat, s) in &summary.categories {
         let (added, removed) = s.change.map_or(("—".into(), "—".into()), |(a, r)| {
             (a.to_string(), r.to_string())
         });
         let _ = writeln!(
             text,
-            "| {} | {} | {} KB | {added} | {removed} | {} | {} | {} |",
+            "| {} | {} | {} KB | {added} | {removed} | {} | {} | {} | {} |",
             category_name(*cat),
             s.domains,
             s.bytes / 1024,
             s.removed.protected.len(),
+            s.trusted_popular,
             s.removed.quarantined.len(),
             s.removed.collapsed
         );

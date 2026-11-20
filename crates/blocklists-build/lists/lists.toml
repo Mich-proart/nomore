@@ -13,6 +13,7 @@ tlds = ["xxx", "porn", "adult", "sex"]
 [[source]]
 name = "blocklistproject-porn"
 category = "porn"
+maintainer = "blocklistproject"
 url = "https://raw.githubusercontent.com/blocklistproject/Lists/master/alt-version/porn-nl.txt"
 format = "domains"
 license = "Unlicense"
@@ -22,6 +23,7 @@ min_domains = 400000
 [[source]]
 name = "stevenblack-porn"
 category = "porn"
+maintainer = "stevenblack"
 url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn-only/hosts"
 format = "hosts"
 license = "MIT"
@@ -31,6 +33,7 @@ min_domains = 30000
 [[source]]
 name = "hagezi-nsfw"
 category = "porn"
+maintainer = "hagezi"
 url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/nsfw-onlydomains.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -40,6 +43,7 @@ min_domains = 40000
 [[source]]
 name = "oisd-nsfw"
 category = "porn"
+maintainer = "oisd"
 url = "https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_nsfw.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -49,6 +53,7 @@ min_domains = 200000
 [[source]]
 name = "nomore-porn"
 category = "porn"
+maintainer = "nomore"
 path = "own/porn.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -59,6 +64,7 @@ homepage = "https://github.com/Mich-proart/nomore"
 [[source]]
 name = "blocklistproject-gambling"
 category = "gambling"
+maintainer = "blocklistproject"
 url = "https://raw.githubusercontent.com/blocklistproject/Lists/master/alt-version/gambling-nl.txt"
 format = "domains"
 license = "Unlicense"
@@ -68,6 +74,7 @@ min_domains = 120000
 [[source]]
 name = "stevenblack-gambling"
 category = "gambling"
+maintainer = "stevenblack"
 url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling-only/hosts"
 format = "hosts"
 license = "MIT"
@@ -77,6 +84,7 @@ min_domains = 3000
 [[source]]
 name = "hagezi-gambling"
 category = "gambling"
+maintainer = "hagezi"
 url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/gambling-onlydomains.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -86,6 +94,7 @@ min_domains = 300000
 [[source]]
 name = "nomore-gambling"
 category = "gambling"
+maintainer = "nomore"
 path = "own/gambling.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -96,6 +105,7 @@ homepage = "https://github.com/Mich-proart/nomore"
 [[source]]
 name = "shadowwhisperer-dating"
 category = "dating"
+maintainer = "shadowwhisperer"
 url = "https://raw.githubusercontent.com/ShadowWhisperer/BlockLists/master/Lists/Dating"
 format = "domains"
 license = "Unlicense"
@@ -107,6 +117,7 @@ min_domains = 700
 # [[source]]
 # name = "ut1-dating"
 # category = "dating"
+# maintainer = "ut1"
 # url = "https://raw.githubusercontent.com/olbat/ut1-blacklists/master/blacklists/dating/domains"
 # format = "domains"
 # license = "CC BY-SA (UT1, Université Toulouse Capitole)"
@@ -116,6 +127,7 @@ min_domains = 700
 [[source]]
 name = "nomore-dating"
 category = "dating"
+maintainer = "nomore"
 path = "own/dating.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -126,6 +138,7 @@ homepage = "https://github.com/Mich-proart/nomore"
 [[source]]
 name = "hagezi-bypass"
 category = "bypass"
+maintainer = "hagezi"
 url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/doh-vpn-proxy-bypass-onlydomains.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -135,6 +148,7 @@ min_domains = 8000
 [[source]]
 name = "hagezi-nosafesearch"
 category = "bypass"
+maintainer = "hagezi"
 url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/nosafesearch-onlydomains.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -144,6 +158,7 @@ min_domains = 100
 [[source]]
 name = "nomore-bypass"
 category = "bypass"
+maintainer = "nomore"
 path = "own/bypass.txt"
 format = "domains"
 license = "GPL-3.0"

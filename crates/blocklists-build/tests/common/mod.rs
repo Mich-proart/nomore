@@ -52,6 +52,7 @@ tlds = ["xxx", "porn"]
 [[source]]
 name = "porn-hosts"
 category = "porn"
+maintainer = "ejemplo-a"
 url = "https://ejemplo.test/porn.hosts"
 format = "hosts"
 license = "MIT"
@@ -59,8 +60,18 @@ homepage = "https://ejemplo.test"
 min_domains = 3
 
 [[source]]
+name = "porn-extra"
+category = "porn"
+maintainer = "ejemplo-c"
+url = "https://ejemplo.test/porn-extra.txt"
+format = "domains"
+license = "MIT"
+homepage = "https://ejemplo.test"
+
+[[source]]
 name = "own-porn"
 category = "porn"
+maintainer = "nomore"
 path = "own-porn.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -69,6 +80,7 @@ homepage = "https://github.com/Mich-proart/nomore-lists"
 [[source]]
 name = "gambling-adblock"
 category = "gambling"
+maintainer = "ejemplo-b"
 url = "https://ejemplo.test/gambling.txt"
 format = "adblock"
 license = "Unlicense"
@@ -77,6 +89,7 @@ homepage = "https://ejemplo.test"
 [[source]]
 name = "dating-wild"
 category = "dating"
+maintainer = "ejemplo-b"
 url = "https://ejemplo.test/dating.txt"
 format = "wildcard"
 license = "CC BY-SA"
@@ -85,6 +98,7 @@ homepage = "https://ejemplo.test"
 [[source]]
 name = "bypass-domains"
 category = "bypass"
+maintainer = "ejemplo-a"
 url = "https://ejemplo.test/bypass.txt"
 format = "domains"
 license = "GPL-3.0"
@@ -102,6 +116,10 @@ pub fn remote(porn: &[&str]) -> Fake {
     fake.0.insert(
         "https://ejemplo.test/porn.hosts".into(),
         format!("# lista\n127.0.0.1 localhost\n{hosts}"),
+    );
+    fake.0.insert(
+        "https://ejemplo.test/porn-extra.txt".into(),
+        "doble.com\nsolo-extra-popular.com\n".into(),
     );
     fake.0.insert(
         "https://ejemplo.test/gambling.txt".into(),
@@ -131,9 +149,16 @@ pub fn world(label: &str) -> World {
     World {
         config: config(&dir, "propio.com\n"),
         protected: Protected::parse("www.google.com\nreddit.com\n").unwrap(),
-        popular: ["pornhub.com", "xvideos.com", "popular-nuevo.com"]
-            .map(String::from)
-            .into(),
+        popular: [
+            "pornhub.com",
+            "xvideos.com",
+            "popular-nuevo.com",
+            "doble.com",
+            "solo-extra-popular.com",
+            "propio.com",
+        ]
+        .map(String::from)
+        .into(),
         reviewed: ["pornhub.com", "xvideos.com"].map(String::from).into(),
         dir,
     }
@@ -176,4 +201,5 @@ pub const PORN: &[&str] = &[
     "popular-nuevo.com",
     "pequeno-porno.com",
     "otro-porno.net",
+    "doble.com",
 ];

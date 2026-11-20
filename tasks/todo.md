@@ -80,12 +80,13 @@ cargo test --workspace
 
 ## Fase 3: Producción
 
-- [ ] **Tarea 9: Fuentes reales y controles de calidad** (M)
+- [x] **Tarea 9: Fuentes reales y controles de calidad** (M)
   - `lists.toml` con las fuentes de la especificación; `protected.txt` completo; conjunto de control de ~300 sitios; comprobación del top 1 000 de Tranco.
   - Aceptación: la ejecución falla si un sitio de control no queda bloqueado o si un sitio del top 1 000 legítimo queda bloqueado (criterio 1).
   - Verificación: comprobación común; revisión manual de `protected.txt` y del conjunto de control contigo.
   - Dependencias: 8.
-  - Ficheros: `crates/blocklists-build/lists.toml`, `protected.txt`, `control/*.txt`, `src/quality.rs`.
+  - Ficheros: `crates/blocklists-build/lists/` (`lists.toml`, `protected.txt`, `reviewed.txt`, `own/*.txt`, `control/*.txt`), `src/quality.rs`.
+  - Resultado (20-11-2026): 170 sitios de control bloqueados, 982 populares legítimos sin bloquear; 28 dudosos en cuarentena pendientes de Michell.
 
 - [ ] **Tarea 10: Repositorio de listas y ejecución diaria** (M)
   - Necesita que crees `Mich-proart/nomore-lists` y la clave de firma. Workflow diario que compila el generador, descarga la publicación anterior, genera, comprueba calidad, publica la release y abre un aviso si hay cuarentena o fuentes caídas.

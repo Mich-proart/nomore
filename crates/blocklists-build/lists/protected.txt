@@ -116,3 +116,36 @@ ngrok.app
 ngrok.dev
 ngrok.pizza
 ngrok.pro
+
+# --- Falsos positivos revisados (20-11-2026): sitios generales que alguna
+# fuente metía en porno, apuestas o vías de escape.
+pandasecurity.com
+sportradar.com
+a-ads.com
+histats.com
+dtscout.com
+livescore.in
+xiaohongshu.com
+ekstrabladet.dk
+suruga-ya.jp
+sslip.io
+kinopoisk.ru
+cosmopolitan.com
+eu.cc
+yandex.by
+dmm.com
+opensea.io
+51.la
+1337x.to
+booth.pm
+funnyjunk.com
+cafepress.com
+videa.hu
+canalblog.com
+fanfox.net
+super.cz
+camscanner.com
+sa.com
+fasthosts.co.uk
+tubidy.cool
+refinery29.com

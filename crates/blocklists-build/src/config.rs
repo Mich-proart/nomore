@@ -8,6 +8,10 @@ use serde::Deserialize;
 
 use crate::parse::Format;
 
+/// Mantenedor de las listas propias de NoMore: lo que está en ellas se ha
+/// añadido a mano y no pasa por cuarentena.
+pub const OWN_MAINTAINER: &str = "nomore";
+
 /// Una fuente de dominios.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -20,6 +24,9 @@ pub struct Source {
     pub url: Option<String>,
     /// Fichero local, relativo a `lists.toml` (listas propias).
     pub path: Option<PathBuf>,
+    /// Quién mantiene la lista. Dos fuentes del mismo mantenedor no cuentan
+    /// como independientes. Las listas propias usan [`OWN_MAINTAINER`].
+    pub maintainer: String,
     /// Formato.
     pub format: Format,
     /// Licencia, tal como se cita en `SOURCES.md`.

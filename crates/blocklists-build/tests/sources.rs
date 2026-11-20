@@ -58,7 +58,7 @@ fn a_failing_or_shrinking_source_falls_back_to_the_previous_copy() {
         .find(|g| g.source.name == "porn-hosts")
         .unwrap();
     assert!(matches!(&porn.status, Status::Fallback(reason) if reason.contains("encogido")));
-    assert_eq!(porn.previous_count, Some(7));
+    assert_eq!(porn.previous_count, Some(PORN.len()));
 
     // Perder un poco es normal.
     let slightly = remote(&PORN[..6]);
