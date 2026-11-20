@@ -70,7 +70,7 @@ Todo lo relevante se anota como evento con hora, tipo y datos.
 | Familia | Eventos |
 |---|---|
 | Acceso | Intento de conexión a un dominio bloqueado (dominio y categoría) |
-| Manipulación | Servicio detenido o desinstalación intentada; DNS, hosts o VPN del sistema cambiados; VPN o proxy ajeno activo; reloj alterado; estado de NoMore corrupto o borrado; clave errónea repetida |
+| Manipulación | Servicio detenido o desinstalación intentada; DNS, hosts o VPN del sistema cambiados; VPN o proxy ajeno activo; reloj alterado; estado de NoMore corrupto o borrado; clave errónea repetida; aprobación o listas con firma falsa |
 | Autorización | Desbloqueo pedido, aprobado, cancelado, cumplido; protección pausada y reanudada; política cambiada |
 | Vida | Señal periódica de «sigo aquí y protegido» |
 

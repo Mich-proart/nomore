@@ -10,28 +10,28 @@ cargo test --workspace
 
 ## Fase 1: Verificador
 
-- [ ] **Tarea 1: Crate y manifiesto firmado** (M)
+- [x] **Tarea 1: Crate y manifiesto firmado** (M)
   - Crear `crates/blocklists` con el formato del manifiesto, su firma y la comprobación de versión.
   - Aceptación: un manifiesto bien firmado y más nuevo se acepta; se rechazan firma de otra clave, un byte alterado, versión igual o menor, y formato desconocido. Admite varias claves públicas (rotación).
   - Verificación: comprobación común.
   - Dependencias: ninguna.
   - Ficheros: `Cargo.toml` del crate, `src/lib.rs`, `src/manifest.rs`, `src/error.rs`, `tests/manifest.rs`.
 
-- [ ] **Tarea 2: Diferencias** (M)
+- [x] **Tarea 2: Diferencias** (M)
   - `delta.rs`: generar la diferencia entre dos binarios `NMBL` y aplicarla.
   - Aceptación: aplicar la diferencia de A a B sobre A da exactamente B (propiedad); diferencia de otra categoría, de otra versión de origen o corrupta se rechaza.
   - Verificación: comprobación común.
   - Dependencias: 1.
-  - Ficheros: `src/delta.rs`, `src/lib.rs`, `tests/delta.rs`. Puede necesitar exponer las huellas de una lista en `filter-core` (`CategoryList::hashes`).
+  - Ficheros: `src/delta.rs`, `src/lib.rs`, `tests/properties.rs`; en `filter-core`: `CategoryList::hashes`, `from_hashes`, `to_bytes` y `Category::code`.
 
-- [ ] **Tarea 3: Plan de descarga y aplicación** (M)
+- [x] **Tarea 3: Plan de descarga y aplicación** (M)
   - `verify.rs`: `plan` (qué ficheros pedir) y `apply` (listas nuevas o error).
   - Aceptación: con la versión anterior instalada pide diferencias; con 8 o más versiones de atraso, o sin listas, pide completos; un fichero que no cuadra con su huella, una diferencia que no da la huella esperada o un fichero que falta producen error y las listas anteriores siguen intactas.
   - Verificación: comprobación común.
   - Dependencias: 2.
   - Ficheros: `src/verify.rs`, `src/lib.rs`, `tests/verify.rs`.
 
-- [ ] **Tarea 4: Robustez del verificador** (S)
+- [x] **Tarea 4: Robustez del verificador** (S)
   - Pruebas de propiedades con bytes aleatorios en manifiesto, firma, binarios y diferencias.
   - Aceptación: ningún pánico; nada que no esté firmado por una clave conocida llega a producir listas.
   - Verificación: comprobación común.
@@ -39,8 +39,8 @@ cargo test --workspace
   - Ficheros: `tests/properties.rs`.
 
 ### Punto de control A
-- [ ] Comprobación común en verde.
-- [ ] Los cinco tipos de material alterado de la especificación se rechazan (criterio 2).
+- [x] Comprobación común en verde.
+- [x] Los cinco tipos de material alterado de la especificación se rechazan (criterio 2).
 - [ ] Revisión con Michell antes de seguir.
 
 ## Fase 2: Generador

@@ -77,6 +77,8 @@ pub enum Tamper {
     },
     /// Llegó una aprobación a distancia con una firma que no es del servidor.
     ForgedApproval,
+    /// Llegaron listas de bloqueo con una firma que no es de NoMore.
+    ForgedLists,
 }
 
 /// Quién ha autorizado una acción.
