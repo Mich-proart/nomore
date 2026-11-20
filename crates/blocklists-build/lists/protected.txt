@@ -103,3 +103,16 @@ dgt.es
 gencat.cat
 barcelona.cat
 boe.es
+
+# --- VPN de empresa y acceso remoto (decisión del 20-11-2026): que NoMore
+# no rompa la VPN del trabajo si se instala en un ordenador de empresa.
+gpcloudservice.com
+tailscale.com
+twingate.com
+netbird.io
+ngrok.com
+ngrok.io
+ngrok.app
+ngrok.dev
+ngrok.pizza
+ngrok.pro
