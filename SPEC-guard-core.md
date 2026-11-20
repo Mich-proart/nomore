@@ -1,6 +1,6 @@
 # Spec: `guard-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/plan.md](tasks/plan.md).
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/archive/guard-core-plan.md](tasks/archive/guard-core-plan.md).
 
 ## Objetivo
 

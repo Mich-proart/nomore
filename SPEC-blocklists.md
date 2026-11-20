@@ -1,6 +1,6 @@
 # Spec: `blocklists`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **pendiente de aprobación**.
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 20-11-2026**. Plan en [tasks/plan.md](tasks/plan.md).
 
 ## Objetivo
 
@@ -126,10 +126,10 @@ crates/blocklists-build/
 5. Si una fuente falla o encoge más de un 30 %, la publicación sigue con su última versión buena.
 6. Dos ejecuciones con las mismas fuentes producen binarios idénticos.
 
-## Preguntas abiertas
+## Decisiones
 
-- **Licencias**: publicar las listas bajo GPL-3.0 (obligado por HaGeZi y oisd). Supuesto: sí.
-- **Dónde publicar**: supuesto, un repositorio público aparte `Mich-proart/nomore-lists` con GitHub Releases, gratuito.
-- **Clave de firma**: supuesto, la generas tú y guardas una copia fuera de línea; yo preparo el script.
-- **UT1**: su página dice «Creative Commons» sin indicar versión. Supuesto: usar solo su lista de citas, citando la fuente, y preguntar al mantenedor por la versión exacta antes de publicar. Sus listas de «redirectores» (traductores y cachés que sirven para saltarse filtros) quedan fuera de momento porque pueden romper sitios normales.
-- **Tamaño de la lista de pornografía**: si al combinar las fuentes pasa de los 32 MB en memoria, supuesto: quitar primero los dominios que ya no existen (sin registro DNS), comprobándolo en cada ejecución.
+- **Licencia de las listas publicadas**: GPL-3.0, con atribución de cada fuente.
+- **Dónde publicar**: repositorio público aparte `Mich-proart/nomore-lists`, con GitHub Releases.
+- **Clave de firma**: la genera Michell con un script del proyecto y guarda una copia fuera de línea.
+- **UT1**: solo su lista de citas, citando la fuente; se confirma la versión de la licencia con el mantenedor antes de publicar. Sus listas de redirectores quedan fuera.
+- **Tamaño**: si la lista de pornografía pasa de 32 MB en memoria, se quitan primero los dominios que ya no existen.
