@@ -8,3 +8,11 @@ repository = "https://github.com/Mich-proart/nomore"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+# Argon2id sin optimizar tarda segundos por comprobación; así las pruebas en
+# modo depuración siguen siendo rápidas.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3

@@ -1,6 +1,6 @@
 //! Precedencia y categorías, a través de la API pública.
 
-use filter_core::{Category, CategoryList, Filter, FilterError, Policy, Verdict};
+use filter_core::{BlockedRule, Category, CategoryList, Filter, FilterError, Policy, Verdict};
 
 fn list(category: Category, domains: &[&str]) -> CategoryList {
     CategoryList::parse(&CategoryList::build(category, domains).unwrap()).unwrap()
@@ -176,4 +176,73 @@ fn invalid_allowlist_entry_is_an_error() {
 fn filter_is_send_and_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<Filter>();
+}
+
+fn rule(category: Category, rule: &str) -> Option<BlockedRule> {
+    Some(BlockedRule {
+        category,
+        rule: rule.to_owned(),
+    })
+}
+
+#[test]
+fn blocked_rule_names_the_list_entry_that_matched() {
+    let f = filter(Policy::default());
+    assert_eq!(
+        f.blocked_rule("cdn.es.pornhub.com"),
+        rule(Category::Porn, "pornhub.com")
+    );
+    assert_eq!(f.blocked_rule("sitio.xxx"), rule(Category::Porn, "xxx"));
+    assert_eq!(
+        f.blocked_rule("WWW.Bet365.ES."),
+        rule(Category::Gambling, "bet365.es")
+    );
+    assert_eq!(
+        f.blocked_rule("api.gotinder.com"),
+        rule(Category::Dating, "gotinder.com")
+    );
+    assert_eq!(
+        f.blocked_rule("dns.google"),
+        rule(Category::Bypass, "dns.google")
+    );
+}
+
+#[test]
+fn blocked_rule_is_none_when_not_blocked() {
+    let f = filter(allowing(&["loteriasyapuestas.es"]));
+    for domain in [
+        "wikipedia.org",
+        "notpornhub.com",
+        "www.loteriasyapuestas.es",
+        "use-application-dns.net",
+        "no es un dominio",
+    ] {
+        assert_eq!(f.blocked_rule(domain), None, "{domain}");
+    }
+    let off = filter(Policy {
+        block_dating: false,
+        ..Policy::default()
+    });
+    assert_eq!(off.blocked_rule("tinder.com"), None);
+}
+
+#[test]
+fn blocked_rule_agrees_with_explain() {
+    let f = filter(Policy::default());
+    for domain in [
+        "a.pornhub.com",
+        "bet365.es",
+        "tinder.com",
+        "nordvpn.com",
+        "wikipedia.org",
+        "use-application-dns.net",
+    ] {
+        let blocked = matches!(f.explain(domain), Verdict::Blocked(_));
+        assert_eq!(f.blocked_rule(domain).is_some(), blocked, "{domain}");
+        if let (Verdict::Blocked(category), Some(found)) =
+            (f.explain(domain), f.blocked_rule(domain))
+        {
+            assert_eq!(found.category, category);
+        }
+    }
 }
