@@ -8,7 +8,11 @@ use blocklists::Manifest;
 use blocklists_build::clean::Protected;
 use blocklists_build::config::Config;
 use blocklists_build::publish::{build, hex, load_previous, parse_hex32, signing_key, Inputs};
-use blocklists_build::read_domain_set;
+use blocklists_build::quality::load_control;
+use blocklists_build::{read_domain_set, read_ranked};
+
+/// Sitios más visitados que se comprueban como falsos positivos.
+const LEGIT_TOP: usize = 1_000;
 use blocklists_build::sources::Http;
 use clap::{Parser, Subcommand};
 use ed25519_dalek::SigningKey;
@@ -36,6 +40,12 @@ enum Command {
         /// Populares ya revisados.
         #[arg(long)]
         reviewed: Option<PathBuf>,
+        /// Carpeta con los sitios de control (`porn.txt`, `gambling.txt`…).
+        #[arg(long)]
+        control: Option<PathBuf>,
+        /// Ranking de sitios (Tranco); los primeros 1000 no deben quedar bloqueados.
+        #[arg(long)]
+        legit: Option<PathBuf>,
         /// Publicaciones anteriores descargadas, de la más reciente a la más antigua.
         #[arg(long)]
         previous: Vec<PathBuf>,
@@ -91,6 +101,8 @@ fn run(command: Command) -> Result<(), String> {
             protected,
             popular,
             reviewed,
+            control,
+            legit,
             previous,
             version,
             date,
@@ -111,6 +123,11 @@ fn run(command: Command) -> Result<(), String> {
                 .map(|p| read_domain_set(&p))
                 .transpose()?
                 .unwrap_or_default();
+            let control = control.map(|dir| load_control(&dir)).transpose()?;
+            let legit = legit
+                .map(|path| read_ranked(&path, LEGIT_TOP))
+                .transpose()?
+                .unwrap_or_default();
             let previous = previous
                 .iter()
                 .map(|dir| load_previous(dir, &[public]))
@@ -124,6 +141,8 @@ fn run(command: Command) -> Result<(), String> {
                 version,
                 date: &date,
                 key: &key,
+                control: control.as_ref(),
+                legit: &legit,
             };
             let summary = build(&inputs, &Http::new(), &out)?;
             for (category, s) in &summary.categories {

@@ -1,0 +1,3 @@
+# Dominios muy visitados revisados a mano y aceptados en su categoría.
+# Un dominio popular que entra nuevo en una lista queda en cuarentena
+# (quarantine.txt de cada publicación) hasta que se añade aquí.

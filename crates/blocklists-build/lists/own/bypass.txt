@@ -1,0 +1,4 @@
+# Vías de escape que faltan en las fuentes. Uno por línea.
+# Variantes de DuckDuckGo que no admiten SafeSearch forzado.
+html.duckduckgo.com
+lite.duckduckgo.com

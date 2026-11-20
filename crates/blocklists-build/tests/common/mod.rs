@@ -157,6 +157,8 @@ impl World {
             version,
             date: "2026-11-20",
             key: &key(),
+            control: None,
+            legit: &[],
         };
         build(&inputs, fetcher, &out).map(|summary| (out, summary))
     }

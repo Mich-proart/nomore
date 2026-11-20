@@ -1,0 +1,8 @@
+# Dominios de apuestas que faltan en las fuentes. Uno por línea.
+# Loterías del Estado y ONCE cuentan como apuestas (decisión del 16-11-2026);
+# cada guardián puede permitirlas una a una.
+loteriasyapuestas.es
+juegosonce.es
+# Sitios del control que no traía ninguna fuente (20-11-2026).
+888casino.com
+kirolbet.es

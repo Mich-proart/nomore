@@ -14,6 +14,7 @@ use filter_core::{Category, CategoryList};
 
 use crate::clean::{clean, Cleaning, Protected, Removed};
 use crate::config::{category, Config};
+use crate::quality::{check, Control, QualityReport};
 use crate::sources::{gather, write_copy, Fetcher, Gathered, Status};
 
 /// Diferencias que se publican: desde las 7 versiones anteriores.
@@ -93,6 +94,10 @@ pub struct Inputs<'a> {
     pub date: &'a str,
     /// Clave de firma.
     pub key: &'a SigningKey,
+    /// Sitios que deben quedar bloqueados.
+    pub control: Option<&'a Control>,
+    /// Sitios legítimos más visitados, que no deben quedar bloqueados.
+    pub legit: &'a [String],
 }
 
 /// Resumen de una categoría.
@@ -117,6 +122,8 @@ pub struct Summary {
     pub categories: BTreeMap<Category, CategorySummary>,
     /// Fuentes que han usado su copia anterior.
     pub fallbacks: Vec<(String, String)>,
+    /// Controles de calidad.
+    pub quality: QualityReport,
 }
 
 /// Genera la publicación en `out`.
@@ -165,6 +172,39 @@ pub fn build(inputs: &Inputs, fetcher: &dyn Fetcher, out: &Path) -> Result<Summa
             },
         );
         lists.insert(cat, list);
+    }
+
+    let quality = match inputs.control {
+        Some(control) => check(&lists, control, inputs.legit, inputs.reviewed)?,
+        None => QualityReport::default(),
+    };
+    if !quality.passed() {
+        // Se escribe el informe para poder ver qué ha fallado, pero ni las
+        // listas ni el manifiesto: no hay nada publicable.
+        let mut text = String::from("# Controles de calidad fallidos\n\n");
+        for (category, domain) in &quality.missing {
+            let _ = writeln!(text, "- falta en {}: {domain}", category_name(*category));
+        }
+        for (domain, category) in &quality.false_positives {
+            let _ = writeln!(
+                text,
+                "- bloqueado por {}: {domain}",
+                category_name(*category)
+            );
+        }
+        write(out, "quality-failed.md", text.as_bytes())?;
+        let partial = Summary {
+            version: inputs.version,
+            categories: categories.clone(),
+            fallbacks: Vec::new(),
+            quality: quality.clone(),
+        };
+        write(out, "quarantine.txt", quarantine_txt(&partial).as_bytes())?;
+        return Err(format!(
+            "controles de calidad: {} sitios de control sin bloquear, {} sitios legítimos bloqueados (ver quality-failed.md)",
+            quality.missing.len(),
+            quality.false_positives.len()
+        ));
     }
 
     let mut entries = BTreeMap::new();
@@ -219,6 +259,7 @@ pub fn build(inputs: &Inputs, fetcher: &dyn Fetcher, out: &Path) -> Result<Summa
             })
             .collect(),
         categories,
+        quality,
     };
     write(out, "SOURCES.md", sources_md(inputs.config).as_bytes())?;
     write(
@@ -276,6 +317,11 @@ fn report_md(inputs: &Inputs, gathered: &[Gathered], summary: &Summary) -> Strin
             s.removed.collapsed
         );
     }
+    let (control, legit) = summary.quality.checked;
+    let _ = writeln!(
+        text,
+        "\nControles: {control} sitios de control bloqueados; {legit} sitios populares legítimos sin bloquear.",
+    );
     text.push_str("\n## Fuentes\n\n| Fuente | Estado | Dominios | Antes | Ignorados |\n|---|---|---|---|---|\n");
     for g in gathered {
         let status = match &g.status {
