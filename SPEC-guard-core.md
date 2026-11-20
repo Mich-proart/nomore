@@ -1,6 +1,6 @@
 # Spec: `guard-core`
 
-Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026**. Plan en [tasks/plan.md](tasks/plan.md).
+Módulo del [mapa de capacidades](CAPABILITY-MAP.md). Estado: **aprobada el 16-11-2026 e implementada**. Plan en [tasks/plan.md](tasks/plan.md).
 
 ## Objetivo
 
@@ -108,6 +108,7 @@ Límite conocido: el DNS no distingue entre escribir una dirección y que una p�
 ```
 Compilar:  cargo build -p guard-core
 Probar:    cargo test -p guard-core
+Garantías: cargo test -p guard-core --release -- --ignored --nocapture
 Lint:      cargo clippy -p guard-core --all-targets -- -D warnings
 Formato:   cargo fmt --all -- --check
 ```
@@ -193,6 +194,19 @@ Además: `add_guardian`, `change_secret`, `authorize_with_recovery_code`, `cance
 4. Estado ausente, corrupto o con otra clave de dispositivo: arranque cerrado y evento de manipulación.
 5. Comprobar la clave del guardián tarda entre 0,1 y 1 s en un móvil de gama media (Argon2id ajustado), y un registro alterado no verifica.
 6. Compila sin avisos para Windows y las tres arquitecturas de Android; clippy y formato en verde.
+
+## Resultados medidos
+
+En Linux x86-64 (20-11-2026):
+
+| Criterio | Objetivo | Resultado |
+|---|---|---|
+| 1. Cada fila de «Qué exige autorización» y de «Avisos» con prueba | Todas | Todas (`tests/actions.rs`, `tests/notify.rs`, `tests/unlock.rs`) |
+| 2. Secuencias aleatorias sin autorización que aflojan algo | 0 de 100 000 | 0 de 100 000 (2 048 054 pasos, 24 s). La prueba detecta los errores introducidos a propósito |
+| 3. El reloj del sistema acorta una espera | Nunca | Nunca, y queda anotado |
+| 4. Estado ausente, alterado, de otra clave o de otro dispositivo | Arranque cerrado y aviso | Sí, con cualquier byte alterado |
+| 5. Comprobar la clave del guardián | < 1 s; 0,1–1 s en móvil | 20 ms aquí, igual con clave buena o errónea. Se mide en un móvil real en `android-app` |
+| 6. Compila para Windows y Android sin avisos | 4 destinos | 4 destinos, en CI |
 
 ## Decisiones
 

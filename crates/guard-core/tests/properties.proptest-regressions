@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 0bc75fc716d9ef41a2be8226e715c51cf04aa114af73f8580a7fd8e583e95271 # shrinks to ops = [Request { action: ChangeMode { mode: Parental } }]
+cc ba5aff31c1acc93ffe8ccee90326faee5313bb4665b5e904270985cc5498c3e3 # shrinks to ops = [Request { action: RemoveGuardian { guardian: First } }, SetWallClock { wall_secs: 1800259200 }]

@@ -105,6 +105,10 @@ impl Filter {
 
     /// Para la interfaz y las pruebas: por qué se decide algo sobre un dominio.
     pub fn explain(&self, domain: &str) -> Verdict;
+
+    /// Si está bloqueado, qué entrada de la lista lo bloquea (`pornhub.com`
+    /// para `cdn.es.pornhub.com`). Añadida para agrupar avisos en `guard-core`.
+    pub fn blocked_rule(&self, domain: &str) -> Option<BlockedRule>;
 }
 ```
 

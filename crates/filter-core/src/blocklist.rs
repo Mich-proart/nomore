@@ -81,12 +81,20 @@ impl SuffixSet {
 
     /// `true` si `name` o alguno de sus dominios padre está en el conjunto.
     pub(crate) fn contains(&self, name: &DomainName) -> bool {
-        !self.hashes.is_empty()
-            && name.suffixes().any(|suffix| {
-                self.hashes
-                    .binary_search(&xxh3_64(suffix.as_bytes()))
-                    .is_ok()
-            })
+        self.matching_suffix(name).is_some()
+    }
+
+    /// La entrada que coincide con `name`: él mismo o el dominio padre más
+    /// específico que esté en el conjunto.
+    pub(crate) fn matching_suffix<'a>(&self, name: &'a DomainName) -> Option<&'a str> {
+        if self.hashes.is_empty() {
+            return None;
+        }
+        name.suffixes().find(|suffix| {
+            self.hashes
+                .binary_search(&xxh3_64(suffix.as_bytes()))
+                .is_ok()
+        })
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -178,6 +186,10 @@ impl CategoryList {
     pub(crate) fn contains(&self, name: &DomainName) -> bool {
         self.set.contains(name)
     }
+
+    pub(crate) fn matching_suffix<'a>(&self, name: &'a DomainName) -> Option<&'a str> {
+        self.set.matching_suffix(name)
+    }
 }
 
 #[cfg(test)]
@@ -209,6 +221,17 @@ mod tests {
         assert!(!l.contains(&name("pornhub.org")));
         assert!(!l.contains(&name("com")));
         assert!(!l.contains(&name("ejemplo.org")));
+    }
+
+    #[test]
+    fn matching_suffix_is_the_most_specific_listed_entry() {
+        let l = list(Category::Porn, &["pornhub.com", "es.pornhub.com"]);
+        let deep = name("cdn.fr.pornhub.com");
+        assert_eq!(l.matching_suffix(&deep), Some("pornhub.com"));
+        let spanish = name("img.es.pornhub.com");
+        assert_eq!(l.matching_suffix(&spanish), Some("es.pornhub.com"));
+        let other = name("notpornhub.com");
+        assert_eq!(l.matching_suffix(&other), None);
     }
 
     #[test]

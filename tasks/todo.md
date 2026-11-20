@@ -69,38 +69,38 @@ cargo test --workspace
 ### Punto de control B
 - [x] Comprobación común en verde.
 - [x] Cada fila de «Qué exige autorización» y de «Avisos» tiene prueba (criterio 1).
-- [ ] Revisión con Michell antes de seguir.
+- [x] Revisión con Michell antes de seguir.
 
 ## Fase 3: Garantías
 
-- [ ] **Tarea 8: Estado autenticado y fallo cerrado** (M)
+- [x] **Tarea 8: Estado autenticado y fallo cerrado** (M)
   - `state.rs`: `save` y `load` con versión y HMAC; arranque sin emparejar si falta, está corrupto o es de otro dispositivo.
   - Aceptación: guardar y cargar conserva todo (ajustes, solicitudes, hora de confianza, cola); cualquier byte alterado u otra clave de dispositivo dan arranque cerrado con evento de manipulación (criterio 4).
   - Verificación: comprobación común.
   - Dependencias: 5, 6 y 7.
   - Ficheros: `src/state.rs`, `src/lib.rs`, `tests/state.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 9: Pruebas de propiedades** (M)
+- [x] **Tarea 9: Pruebas de propiedades** (M)
   - Secuencias aleatorias de órdenes y saltos de reloj; bytes aleatorios en `load` y en aprobaciones.
   - Aceptación: en 100 000 secuencias sin clave, sin aprobación válida y sin que venza la espera, los ajustes nunca se aflojan (criterio 2); el reloj del sistema nunca acorta una espera (criterio 3); ningún pánico.
   - Verificación: `cargo test -p guard-core --release -- --ignored`.
   - Dependencias: 8.
   - Ficheros: `tests/properties.rs`, `Cargo.toml` del crate.
 
-- [ ] **Tarea 10: `filter-core` devuelve la regla que coincidió** (S)
+- [x] **Tarea 10: `filter-core` devuelve la regla que coincidió** (S)
   - Nueva función pública `Filter::blocked_rule(domain)` que devuelve la categoría y la entrada de la lista (`pornhub.com` para `cdn.es.pornhub.com`), para usarla como clave de agrupación.
   - Aceptación: devuelve la entrada exacta de la lista; `None` si el dominio no está bloqueado; no cambia ningún comportamiento existente.
   - Verificación: comprobación común.
   - Dependencias: ninguna.
   - Ficheros: `crates/filter-core/src/blocklist.rs`, `src/policy.rs`, `tests/policy.rs`, `SPEC-filter-core.md`.
 
-- [ ] **Tarea 11: CI y medición de Argon2id** (S)
+- [x] **Tarea 11: CI y medición de Argon2id** (S)
   - Extender los trabajos de garantías y destinos a todo el workspace; prueba que mide la comprobación de clave.
   - Aceptación: los cuatro destinos compilan sin avisos con los dos crates (criterio 6); la comprobación de clave tarda menos de 1 s en CI (criterio 5, parte medible aquí).
   - Verificación: el CI pasa en la rama.
   - Dependencias: 9.
-  - Ficheros: `.github/workflows/ci.yml`, `tests/guarantees.rs`.
+  - Ficheros: `.github/workflows/ci.yml`, `crates/guard-core/tests/guarantees.rs`.
 
 ### Punto de control final
-- [ ] Los seis criterios de éxito de la especificación se cumplen.
+- [x] Los seis criterios de éxito de la especificación se cumplen.
 - [ ] Revisión con Michell y fusión en `development`.

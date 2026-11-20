@@ -36,6 +36,7 @@ mod guard;
 mod mode;
 mod notify;
 mod secret;
+mod state;
 mod unlock;
 
 pub use approval::{Approval, ApprovalBody};

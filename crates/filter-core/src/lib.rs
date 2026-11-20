@@ -29,4 +29,4 @@ pub use blocklist::{Category, CategoryList};
 pub use dns::{Action, RewriteToken};
 pub use domain::DomainName;
 pub use error::FilterError;
-pub use policy::{Filter, Policy, Verdict};
+pub use policy::{BlockedRule, Filter, Policy, Verdict};

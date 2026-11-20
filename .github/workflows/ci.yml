@@ -24,14 +24,14 @@ jobs:
         run: cargo test --workspace
 
   garantias:
-    name: Garantías (10M de consultas, 1M de dominios)
+    name: Garantías (pruebas largas y de tiempos)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Pruebas largas
-        run: cargo test -p filter-core --release -- --ignored --nocapture
+        run: cargo test --workspace --release -- --ignored --nocapture
 
   destinos:
     name: Compila para ${{ matrix.target }}
@@ -54,4 +54,4 @@ jobs:
         with:
           key: ${{ matrix.target }}
       - name: Comprobar
-        run: cargo check -p filter-core --target ${{ matrix.target }}
+        run: cargo check --workspace --target ${{ matrix.target }}

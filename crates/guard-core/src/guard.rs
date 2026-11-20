@@ -13,6 +13,7 @@ use crate::secret::{
     Failures, GuardianId, GuardianInfo, GuardianRecord, NewGuardian, RecoveryCode, ENTROPY_LEN,
     FAILURES_BEFORE_ALERT, MAX_GUARDIANS,
 };
+use crate::state::{open, seal, OpenError};
 use crate::unlock::{Requests, UnlockRequest, DELAY_GRANT_SECS};
 
 /// Lo que dura el permiso que da un guardián, con su clave o a distancia.
@@ -91,6 +92,37 @@ impl Guard {
             heartbeat: Heartbeat::default(),
             log: EventLog::new(),
         }
+    }
+
+    /// Arranca desde el estado guardado.
+    ///
+    /// Si falta, está alterado, se selló con otra clave o es de otro
+    /// dispositivo, **falla cerrado**: arranca sin emparejar, con protección
+    /// máxima, y anota la manipulación. En la primera instalación no hay
+    /// estado: entonces se usa [`Guard::unpaired`], no esta función.
+    pub fn load(saved: Option<&[u8]>, device_key: &[u8], device: DeviceId, now: TimePoint) -> Self {
+        let tamper = match saved.map(|bytes| open(bytes, device_key)) {
+            None => Tamper::StateMissing,
+            Some(Err(OpenError::Malformed | OpenError::BadTag)) => Tamper::StateInvalid,
+            Some(Ok(payload)) => match serde_json::from_slice::<Guard>(payload) {
+                Ok(mut guard) if guard.device == to_hex(&device) => {
+                    guard.observe(now);
+                    return guard;
+                }
+                _ => Tamper::StateInvalid,
+            },
+        };
+        let mut guard = Self::unpaired(device, now);
+        guard.emit(EventKind::Tamper(tamper));
+        guard
+    }
+
+    /// Estado listo para guardar, sellado con la clave del dispositivo.
+    pub fn save(&self, device_key: &[u8]) -> Vec<u8> {
+        // Serializar estos tipos no falla; si fallara, el sello vacío no
+        // abriría como estado y el siguiente arranque fallaría cerrado.
+        let payload = serde_json::to_vec(self).unwrap_or_default();
+        seal(&payload, device_key)
     }
 
     /// Identificador del dispositivo, en hexadecimal.
