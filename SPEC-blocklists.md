@@ -139,3 +139,4 @@ crates/blocklists-build/
 - **Clave de firma**: la genera Michell con un script del proyecto y guarda una copia fuera de línea.
 - **UT1**: solo su lista de citas, citando la fuente; se confirma la versión de la licencia con el mantenedor antes de publicar. Sus listas de redirectores quedan fuera.
 - **Tamaño**: si la lista de pornografía pasa de 32 MB en memoria, se quitan primero los dominios que ya no existen.
+- **VPN de empresa y acceso remoto** (GlobalProtect, Tailscale, Twingate, NetBird, ngrok): protegidas, para no romper la VPN del trabajo.
