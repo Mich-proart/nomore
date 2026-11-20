@@ -84,17 +84,16 @@ pub struct Gathered {
     pub previous_count: Option<usize>,
 }
 
-/// Fichero con la copia de una fuente dentro de una publicación.
+/// Fichero con la copia de una fuente dentro de una publicación. Plano, sin
+/// subcarpetas, porque las publicaciones de GitHub no las admiten.
 pub fn copy_path(release_dir: &Path, name: &str) -> PathBuf {
-    release_dir.join("sources").join(format!("{name}.txt.gz"))
+    release_dir.join(format!("source-{name}.txt.gz"))
 }
 
 /// Guarda la copia de una fuente (un dominio por línea, comprimido).
 pub fn write_copy(release_dir: &Path, gathered: &Gathered) -> Result<(), String> {
+    std::fs::create_dir_all(release_dir).map_err(|e| e.to_string())?;
     let path = copy_path(release_dir, &gathered.source.name);
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
     let mut text = String::new();
     for domain in &gathered.domains {
         text.push_str(domain);

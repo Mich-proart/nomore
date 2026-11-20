@@ -59,6 +59,7 @@ report.md                qué entró, qué salió, qué se descartó y por qué
 ```
 
 - **Versión**: número creciente, la fecha en formato `AAAAMMDD` más un contador.
+- **Copias de las fuentes**: `source-<fuente>.txt.gz`, la versión usada de cada fuente, para poder reutilizarla si al día siguiente falla.
 - **Diferencias**: dos listas ordenadas de huellas, añadidas y quitadas. Como las listas sobre todo crecen, la actualización diaria es pequeña; si el dispositivo lleva más de 7 versiones sin actualizar, descarga los binarios completos.
 - **Licencia de lo publicado**: GPL-3.0, porque incluye fuentes GPL-3.0. Eso obliga a que las listas sean públicas y a citar las fuentes, cosa que encaja con un proyecto gratuito.
 
