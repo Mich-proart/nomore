@@ -1,0 +1,30 @@
+[package]
+name = "blocklists-build"
+version = "0.1.0"
+description = "Generador de las listas de NoMore: descarga, limpia, combina, publica y firma"
+edition.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "nomore-lists"
+path = "src/main.rs"
+
+[dependencies]
+blocklists = { path = "../blocklists" }
+filter-core = { path = "../filter-core" }
+clap = { version = "4", features = ["derive"] }
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+flate2 = "1"
+getrandom = "0.4"
+idna = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "1"
+ureq = "3"
+
+[dev-dependencies]
+proptest = "1"

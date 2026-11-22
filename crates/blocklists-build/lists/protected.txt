@@ -1,0 +1,151 @@
+# Dominios que nunca se bloquean por categoría, aunque una fuente los incluya.
+# Proteger un dominio impide bloquearlo a él y a sus dominios padre; sus
+# subdominios sí se pueden bloquear. Cambiar esta lista se decide con Michell.
+
+# --- Buscadores: SafeSearch necesita que respondan.
+google.com
+www.google.com
+www.google.es
+www.google.cat
+www.bing.com
+bing.com
+duckduckgo.com
+www.duckduckgo.com
+www.youtube.com
+m.youtube.com
+youtube.com
+youtubei.googleapis.com
+www.youtube-nocookie.com
+forcesafesearch.google.com
+strict.bing.com
+safe.duckduckgo.com
+restrict.youtube.com
+restrictmoderate.youtube.com
+
+# --- Sistemas operativos y actualizaciones.
+microsoft.com
+windowsupdate.com
+windows.com
+live.com
+office.com
+microsoftonline.com
+apple.com
+icloud.com
+android.com
+googleapis.com
+gstatic.com
+play.google.com
+googleusercontent.com
+mozilla.org
+mozilla.net
+firefox.com
+
+# --- Correo y mensajería (no se bloquean por decisión del 16-11-2026).
+gmail.com
+outlook.com
+hotmail.com
+yahoo.com
+proton.me
+protonmail.com
+whatsapp.com
+whatsapp.net
+telegram.org
+signal.org
+
+# --- Redes sociales generalistas: las cubrirá screen-ai.
+facebook.com
+instagram.com
+x.com
+twitter.com
+reddit.com
+tiktok.com
+linkedin.com
+pinterest.com
+tumblr.com
+snapchat.com
+discord.com
+twitch.tv
+
+# --- Conocimiento, trabajo y comercio.
+wikipedia.org
+github.com
+gitlab.com
+stackoverflow.com
+amazon.com
+amazon.es
+ebay.com
+ebay.es
+paypal.com
+cloudflare.com
+akamaihd.net
+spotify.com
+netflix.com
+
+# --- Bancos (España).
+bbva.es
+santander.com
+bancosantander.es
+caixabank.es
+ing.es
+bancsabadell.com
+bankinter.com
+unicajabanco.es
+openbank.es
+revolut.com
+bizum.es
+
+# --- Administración pública (España).
+gob.es
+agenciatributaria.gob.es
+seg-social.es
+sepe.es
+dgt.es
+gencat.cat
+barcelona.cat
+boe.es
+
+# --- VPN de empresa y acceso remoto (decisión del 20-11-2026): que NoMore
+# no rompa la VPN del trabajo si se instala en un ordenador de empresa.
+gpcloudservice.com
+tailscale.com
+twingate.com
+netbird.io
+ngrok.com
+ngrok.io
+ngrok.app
+ngrok.dev
+ngrok.pizza
+ngrok.pro
+
+# --- Falsos positivos revisados (20-11-2026): sitios generales que alguna
+# fuente metía en porno, apuestas o vías de escape.
+pandasecurity.com
+sportradar.com
+a-ads.com
+histats.com
+dtscout.com
+livescore.in
+xiaohongshu.com
+ekstrabladet.dk
+suruga-ya.jp
+sslip.io
+kinopoisk.ru
+cosmopolitan.com
+eu.cc
+yandex.by
+dmm.com
+opensea.io
+51.la
+1337x.to
+booth.pm
+funnyjunk.com
+cafepress.com
+videa.hu
+canalblog.com
+fanfox.net
+super.cz
+camscanner.com
+sa.com
+fasthosts.co.uk
+tubidy.cool
+refinery29.com

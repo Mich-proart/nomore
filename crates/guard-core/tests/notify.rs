@@ -86,11 +86,12 @@ fn every_kind_of_tampering_is_immediate() {
         Tamper::StateMissing,
         Tamper::StateInvalid,
         Tamper::ForgedApproval,
+        Tamper::ForgedLists,
     ] {
         guard.record_tamper(tamper, t(1));
     }
     let all = kinds(&guard.outbox());
-    assert_eq!(all.len(), 8);
+    assert_eq!(all.len(), 9);
     assert!(all
         .iter()
         .all(|(urgency, _)| *urgency == Urgency::Immediate));

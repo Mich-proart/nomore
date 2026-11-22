@@ -1,0 +1,19 @@
+# Apps y webs de citas que faltan en las fuentes. Uno por línea.
+# Sitios del control que no traía ninguna fuente (20-11-2026).
+adultfriendfinder.com
+ashleymadison.com
+benaughty.com
+edarling.es
+elitesingles.com
+feeld.co
+gleeden.com
+lovoo.com
+meetic.com
+okcupid.com
+parship.es
+planetromeo.com
+plentyoffish.com
+pof.com
+scruff.com
+taimi.com
+victoriamilan.com

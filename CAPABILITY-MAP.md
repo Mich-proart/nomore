@@ -27,7 +27,7 @@ La diferencia entre los dos casos es solo de configuración:
 |---|---|---|
 | `filter-core` | Decide si un dominio se bloquea: listas, subdominios, SafeSearch forzado, bloqueo de DoH, VPN y proxies conocidos. Librería Rust compartida por todas las plataformas | — |
 | `guard-core` | Anti-manipulación común: roles, clave del guardián, solicitudes de desbloqueo con espera, registro de eventos (intentos de acceso y de manipulación) y cola de avisos. Librería Rust | — |
-| `blocklists` | Genera y publica las listas de dominios (firmadas y versionadas) y define cómo se actualizan los clientes | `filter-core` |
+| `blocklists` | Genera cada día las listas a partir de fuentes públicas, las publica firmadas con diferencias diarias, y verifica en el dispositivo que son auténticas y más recientes | `filter-core` |
 | `guardian-link` | Servidor: recibe los eventos de los dispositivos y avisa al guardián por correo (WhatsApp, SMS o notificación en el móvil, más adelante), detecta dispositivos que dejan de dar señal y permite aprobar desbloqueos a distancia | `guard-core` |
 | `windows-agent` | Servicio de Windows (SYSTEM): proxy DNS local, DNS forzado en todos los adaptadores, DoH de navegadores desactivado por política, autorreparación, protección contra desinstalación y envío de eventos | `filter-core`, `guard-core`, `blocklists`, `guardian-link` |
 | `windows-ui` | Interfaz (Tauri): instalación, emparejar guardián, estado, pedir desbloqueo | `windows-agent` |
@@ -37,7 +37,7 @@ La diferencia entre los dos casos es solo de configuración:
 Orden de construcción:
 
 ```
-filter-core ✔ → guard-core → blocklists → guardian-link → windows-agent → windows-ui → android-app → screen-ai
+filter-core ✔ → guard-core ✔ → blocklists → guardian-link → windows-agent → windows-ui → android-app → screen-ai
 ```
 
 Fuera de este mapa por ahora: macOS, Linux, iOS.

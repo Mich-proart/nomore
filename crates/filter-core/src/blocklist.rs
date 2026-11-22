@@ -23,7 +23,7 @@ const FORMAT_VERSION: u8 = 1;
 const HEADER_LEN: usize = 16;
 
 /// Categoría de una lista de bloqueo.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Category {
     /// Pornografía y desnudos. Siempre activa.
     Porn,
@@ -36,7 +36,11 @@ pub enum Category {
 }
 
 impl Category {
-    fn code(self) -> u8 {
+    /// Las cuatro categorías, en orden.
+    pub const ALL: [Category; 4] = [Self::Porn, Self::Gambling, Self::Dating, Self::Bypass];
+
+    /// Código de un byte con que la categoría viaja en los binarios.
+    pub fn code(self) -> u8 {
         match self {
             Self::Porn => 1,
             Self::Gambling => 2,
@@ -45,7 +49,8 @@ impl Category {
         }
     }
 
-    fn from_code(code: u8) -> Result<Self, FilterError> {
+    /// Categoría a partir de su código.
+    pub fn from_code(code: u8) -> Result<Self, FilterError> {
         match code {
             1 => Ok(Self::Porn),
             2 => Ok(Self::Gambling),
@@ -119,16 +124,39 @@ impl CategoryList {
         S: AsRef<str>,
     {
         let set = SuffixSet::from_domains(domains)?;
-        let mut out = Vec::with_capacity(HEADER_LEN + set.hashes.len() * 8);
+        Ok(Self { category, set }.to_bytes())
+    }
+
+    /// Construye una lista a partir de sus huellas, que deben estar en orden
+    /// estrictamente creciente. La usa `blocklists` al aplicar diferencias.
+    pub fn from_hashes(category: Category, hashes: Vec<u64>) -> Result<Self, FilterError> {
+        if hashes.windows(2).any(|pair| pair[0] >= pair[1]) {
+            return Err(FilterError::CorruptList("huellas desordenadas o repetidas"));
+        }
+        Ok(Self {
+            category,
+            set: SuffixSet { hashes },
+        })
+    }
+
+    /// Huellas de la lista, en orden estrictamente creciente.
+    pub fn hashes(&self) -> &[u64] {
+        &self.set.hashes
+    }
+
+    /// El binario de la lista, tal como lo lee [`CategoryList::parse`].
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let hashes = &self.set.hashes;
+        let mut out = Vec::with_capacity(HEADER_LEN + hashes.len() * 8);
         out.extend_from_slice(MAGIC);
         out.push(FORMAT_VERSION);
-        out.push(category.code());
+        out.push(self.category.code());
         out.extend_from_slice(&[0, 0]);
-        out.extend_from_slice(&(set.hashes.len() as u64).to_le_bytes());
-        for hash in &set.hashes {
+        out.extend_from_slice(&(hashes.len() as u64).to_le_bytes());
+        for hash in hashes {
             out.extend_from_slice(&hash.to_le_bytes());
         }
-        Ok(out)
+        out
     }
 
     /// Lee un binario generado por [`CategoryList::build`].
@@ -187,6 +215,12 @@ impl CategoryList {
         self.set.contains(name)
     }
 
+    /// `true` si la lista bloquea `domain`: está él o uno de sus padres.
+    /// Un texto que no es un dominio válido no está bloqueado.
+    pub fn blocks(&self, domain: &str) -> bool {
+        DomainName::parse(domain).is_ok_and(|name| self.contains(&name))
+    }
+
     pub(crate) fn matching_suffix<'a>(&self, name: &'a DomainName) -> Option<&'a str> {
         self.set.matching_suffix(name)
     }
@@ -232,6 +266,34 @@ mod tests {
         assert_eq!(l.matching_suffix(&spanish), Some("es.pornhub.com"));
         let other = name("notpornhub.com");
         assert_eq!(l.matching_suffix(&other), None);
+    }
+
+    #[test]
+    fn hashes_roundtrip_through_from_hashes_and_to_bytes() {
+        let bytes = CategoryList::build(Category::Gambling, ["a.com", "b.com", "c.com"]).unwrap();
+        let parsed = CategoryList::parse(&bytes).unwrap();
+        let rebuilt =
+            CategoryList::from_hashes(Category::Gambling, parsed.hashes().to_vec()).unwrap();
+        assert_eq!(rebuilt.to_bytes(), bytes);
+        assert!(CategoryList::from_hashes(Category::Porn, vec![2, 1]).is_err());
+        assert!(CategoryList::from_hashes(Category::Porn, vec![1, 1]).is_err());
+        assert!(CategoryList::from_hashes(Category::Porn, vec![]).is_ok());
+    }
+
+    #[test]
+    fn blocks_checks_the_domain_and_its_parents() {
+        let l = list(Category::Porn, &["pornhub.com"]);
+        assert!(l.blocks("pornhub.com"));
+        assert!(l.blocks("Es.PornHub.com."));
+        assert!(!l.blocks("notpornhub.com"));
+        assert!(!l.blocks("no es un dominio"));
+    }
+
+    #[test]
+    fn category_codes_roundtrip() {
+        for category in Category::ALL {
+            assert_eq!(Category::from_code(category.code()), Ok(category));
+        }
     }
 
     #[test]
